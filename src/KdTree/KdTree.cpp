@@ -1,36 +1,28 @@
 #include "KdTree.h"
-
-// KdTreeNode Class
+#include <cmath>
+#include <iostream>
 
 template <class Point>
-KdTreeNode::KdTreeNode(Point point) {
-    this->point = point;
-    this->left = NULL;
-    this->right = NULL;
+KdTree<Point>::KdTree() {
+    this->root = nullptr;
 }
 
 template <class Point>
-KdTreeNode::~KdTreeNode() {
-    delete left;
-    delete right;
-}
-
-
-// KdTree Class
-
-
-template <class Point>
-KdTree::KdTree() {
-    this->root = NULL;
+KdTree<Point>::KdTree(std::vector<Point> points) {
+    this->root = nullptr;
+    for (size_t i = 0; i < points.size(); i++) {
+        this->insert(points[i]);
+    }
 }
 
 template <class Point>
-KdTree::~KdTree() {
+KdTree<Point>::~KdTree() {
     delete root;
 }
 
 // TODO: make operator < for Point class
-bool KdTree::inRange(Point point, Point min, Point max) {
+template <class Point>
+bool KdTree<Point>::inRange(Point point, Point min, Point max) {
     for (int i = 0; i < point.dimensions(); i++) {
         if (point[i] < min[i] || point[i] > max[i]) {
             return false;
@@ -39,19 +31,29 @@ bool KdTree::inRange(Point point, Point min, Point max) {
     return true;
 }
 
+template<class Point>
+double distance(Point point1, Point point2) {
+    double sum = 0;
+    for (int i = 0; i < point1.dimensions(); i++) {
+        sum += pow(point1[i] - point2[i], 2);
+    }
+    return sqrt(sum);
+}
+
+
 template <class Point>
-void KdTree::insert(Point point) {
-    if (this->root == NULL) {
-        this->root = new KdTreeNode(point);
+void KdTree<Point>::insert(Point point) {
+    if (this->root == nullptr) {
+        this->root = new KdTreeNode<Point>(point);
     } else {
         this->_insert(this->root, point, 0, point.dimensions());
     }
 }
 
 template <class Point>
-void KdTree::_insert(KdTreeNode* node, Point point, int depth, int k) {
-    if (node == NULL) {
-        node = new KdTreeNode(point);
+void KdTree<Point>::_insert(KdTreeNode<Point>* node, Point point, int depth, int k) {
+    if (node == nullptr) {
+        node = new KdTreeNode<Point>(point);
     } else {
         int axis = depth % k;
         if (point[axis] <= node->point[axis]) {
@@ -63,8 +65,8 @@ void KdTree::_insert(KdTreeNode* node, Point point, int depth, int k) {
 }
 
 template <class Point>
-void KdTree::rangeSearch(Point point, Point min, Point max, int depth, vector<Point> &points) {
-    if (this->root == NULL) {
+void KdTree<Point>::rangeSearch(Point point, Point min, Point max, int depth, std::vector<Point> &points) {
+    if (this->root == nullptr) {
         return;
     }
 
@@ -74,34 +76,47 @@ void KdTree::rangeSearch(Point point, Point min, Point max, int depth, vector<Po
     }
 
     // Check whether the left or right subtree is in range
-    if (min[depth % k] <= point[depth % k]) {
-        this->rangeSearch(node->left, min, max, depth + 1, points);
+    int axis = depth % point.dimensions();
+    if (min[axis] <= point[axis]) {
+        this->rangeSearch(point->left, min, max, depth + 1, points);
     }
-    if (max[depth % k] >= point[depth % k]) {
-        this->rangeSearch(node->right, min, max, depth + 1, points);
+    if (max[axis] >= point[axis]) {
+        this->rangeSearch(point->right, min, max, depth + 1, points);
     }
 
 }
 
 template <class Point>
-Point KdTree::nearestNeighborSearch(KTreeNode node, Point query, int depth, double best_dist) {
-    if (this->root == NULL) {
+void KdTree<Point>::print(KdTreeNode<Point>* node, int depth) {
+    if (node == nullptr) {
         return;
     }
+    for (int i = 0; i < depth; i++) {
+        std::cout << " ";
+    }
+    std::cout << node->point << std::endl;
+    this->print(node->left, depth + 1);
+    this->print(node->right, depth + 1);
+}
+
+template <class Point>
+Point KdTree<Point>::nearestNeighborSearch(KdTreeNode<Point> node, Point query, int depth, double best_dist) {
+    if (this->root == nullptr) {
+        return;
+    }
+    Point best_point;
 
     // Check if current node is closer than best_dist
-    double dist = node->point.distance(query);
+    double dist = distance(node->point, query);
     if (dist < best_dist) {
         best_dist = dist;
+        best_point = node->point;
     }
 
-    Point nearestNeighbor = node->point;
-
-    // Determine which subtree to search first
-    int axis = depth % k;
-    KdTreeNode* good_side = nullptr;
-    KdTreeNode* bad_side = nullptr;
-
+    // Check which side of the tree to search first
+    int axis = depth % query.dimensions();
+    KdTreeNode<Point>* good_side;
+    KdTreeNode<Point>* bad_side;
     if (query[axis] <= node->point[axis]) {
         good_side = node->left;
         bad_side = node->right;
@@ -111,24 +126,22 @@ Point KdTree::nearestNeighborSearch(KTreeNode node, Point query, int depth, doub
     }
 
     // Search good side first
-    Point best_point_good = this->nearestNeighborSearch(good_side, query, depth + 1, best_dist);
-    double dist_good_side = best_point_good.distance(query);
-    if( dist_good_side < best_dist) {
-        best_dist = dist_good_side;
-        nearestNeighbor = best_point_good;
+    Point good_side_best = this->nearestNeighborSearch(good_side, query, depth + 1, best_dist);
+    double good_side_best_dist = distance(good_side_best, query);
+    if (good_side_best_dist < best_dist) {
+        best_dist = good_side_best_dist;
+        best_point = good_side_best;
     }
 
     // Check if bad side is worth searching
-    if (abs(query[axis] - node->point[axis]) < best_dist) {
-        Point best_point_bad = this->nearestNeighborSearch(bad_side, query, depth + 1, best_dist);
-        double dist_bad_side = best_point_bad.distance(query);
-        if (dist_bad_side < best_dist) {
-            best_dist = dist_bad_side;
-            nearestNeighbor = best_point_bad;
+    if (distance(query[axis], node->point[axis]) < best_dist) {
+        Point bad_side_best = this->nearestNeighborSearch(bad_side, query, depth + 1, best_dist);
+        double bad_side_best_dist = distance(bad_side_best, query);
+        if (bad_side_best_dist < best_dist) {
+            best_dist = bad_side_best_dist;
+            best_point = bad_side_best;
         }
     }
-
-    return nearestNeighbor;
 }
 
 
