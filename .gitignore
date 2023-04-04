@@ -3,3 +3,4 @@
 !begin-transaction.sql
 !schema.sql
 !end-transaction.sql
+.vscode/

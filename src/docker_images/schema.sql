@@ -82,3 +82,22 @@ CREATE TABLE r_track_artist (
     PRIMARY KEY (track_id, artist_id)
     );
 
+CREATE OR REPLACE FUNCTION trigger_tracks_avoid_empty_fks()
+  RETURNS trigger
+  LANGUAGE plpgsql AS
+$func$
+BEGIN
+   IF NEW.audio_feature_id = '' THEN
+      NEW.audio_feature_id := NULL;
+   END IF;
+
+   RETURN NEW;
+END
+$func$;
+
+CREATE TRIGGER tracks_audio_feature_id_avoid_empty
+BEFORE INSERT OR UPDATE ON tracks
+FOR EACH ROW
+WHEN (NEW.audio_feature_id = '')
+EXECUTE PROCEDURE trigger_tracks_avoid_empty_fks();
+
