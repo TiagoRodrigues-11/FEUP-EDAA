@@ -1,15 +1,19 @@
 CXX = g++
 CXXFLAGS = -Wall -Wextra -pedantic -std=c++17
 
-SRCS = main.cpp Song.cpp KdTree.cpp KdTreeNode.cpp
-OBJS = $(SRCS:.cpp=.o)
-EXEC = kd
+target: main
 
-$(EXEC): $(OBJS)
-	$(CXX) $(OBJS) -o $(EXEC)
+KdTree.o: KdTree.cpp KdTree.h
+	$(CXX) $(CXXFLAGS) -c KdTree.cpp
 
-%.o: %.cpp %.h
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+Song.o: Song.cpp Song.h
+	$(CXX) $(CXXFLAGS) -c Song.cpp
+
+main.o: KdTree.o Song.o main.cpp
+	$(CXX) $(CXXFLAGS) -c main.cpp
+
+main: main.o KdTree.o Song.o
+	$(CXX) $(CXXFLAGS) main.o KdTree.o Song.o -o KdTree.exe
 
 clean:
-	rm -f $(OBJS) $(EXEC)
+	rm -f *.o

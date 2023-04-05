@@ -1,6 +1,5 @@
 #include "Song.h"
 
-
 Song::Song() {
     this->name = "";
     this->artist = "";

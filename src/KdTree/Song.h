@@ -1,5 +1,4 @@
-#ifndef SONG_H
-#define SONG_H
+#pragma once
 
 #include <string>
 
@@ -33,5 +32,3 @@ class Song {
         double time_signature;
         double mode;
 };
-
-#endif
