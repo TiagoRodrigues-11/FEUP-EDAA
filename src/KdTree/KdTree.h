@@ -3,6 +3,7 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
+#include "thread-pool-3.3.0/BS_thread_pool.hpp"
 
 template <class Point>
 class KdTree;
@@ -45,9 +46,11 @@ template <class Point>
 class KdTree {
     private:
         KdTreeNode<Point>* root;
+        size_t num_threads;
         void _insert(KdTreeNode<Point>* node, Point point, int depth, int k);
         void _remove(KdTreeNode<Point>* node, Point point, int depth, int k);
         bool inRange(Point point, Point min, Point max);
+        void buildTree(std::vector<Point> points, KdTreeNode<Point>* &node, int depth, BS::thread_pool &pool);
         
     public:
         KdTree();
@@ -69,8 +72,50 @@ KdTree<Point>::KdTree() {
 template <class Point>
 KdTree<Point>::KdTree(std::vector<Point> points) {
     this->root = nullptr;
-    for (size_t i = 0; i < points.size(); i++) {
+    
+    /*for (size_t i = 0; i < points.size(); i++) { //I THINK WITH THIS THE TREE ISN'T BALANCED
         this->insert(points[i]);
+    }*/
+
+    this->num_threads = std::thread::hardware_concurrency() - 1;
+    BS::thread_pool pool(this->num_threads);
+
+    this->buildTree(points, root, 0, pool); 
+}
+
+template <class Point>
+void KdTree<Point>::buildTree(std::vector<Point> points, KdTreeNode<Point>* &node, int depth, BS::thread_pool &pool) {
+    if(points.size() == 0) {
+        node = nullptr;
+        return;
+    }
+
+    int axis = depth % points[0].dimensions();
+
+    std::sort(points.begin(), points.end(), [axis](Point a, Point b) { //TO IMPROVE - FOR BETTER PERFORMACE - IT TAKES A LOT OF TIME
+        return a[axis] < b[axis];
+    });
+
+
+    int median = points.size() / 2;
+
+    node = new KdTreeNode<Point>(points[median]);
+
+    std::vector<Point> leftPoints(points.begin(), points.begin() + median);
+    std::vector<Point> rightPoints(points.begin() + median + 1, points.end());
+
+    if(leftPoints.size() > 10000 && rightPoints.size() > 10000 && pool.get_tasks_running() < this->num_threads){
+        auto task = pool.submit([this, &node, &leftPoints, depth, axis, &pool] {
+            this->buildTree(leftPoints, node->left, depth + 1, pool);
+        });
+
+        this->buildTree(rightPoints, node->right, depth + 1, pool);
+
+        task.get();
+    }
+    else{
+        this->buildTree(leftPoints, node->left, depth + 1, pool);
+        this->buildTree(rightPoints, node->right, depth + 1, pool);
     }
 }
 
