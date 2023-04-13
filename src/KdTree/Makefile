@@ -3,17 +3,14 @@ CXXFLAGS = -std=c++17 -O3 -Wall -Wextra -Wconversion -Wsign-conversion -Wpedanti
 
 target: main
 
-KdTree.o: KdTree.cpp KdTree.h
-	$(CXX) $(CXXFLAGS) -c KdTree.cpp
-
 Song.o: Song.cpp Song.h
 	$(CXX) $(CXXFLAGS) -c Song.cpp
 
-main.o: KdTree.o Song.o main.cpp
+main.o: Song.o main.cpp
 	$(CXX) $(CXXFLAGS) -c main.cpp
 
-main: main.o KdTree.o Song.o
-	$(CXX) $(CXXFLAGS) main.o KdTree.o Song.o -o KdTree.exe
+main: main.o Song.o
+	$(CXX) $(CXXFLAGS) main.o Song.o -o KdTree.exe
 
 clean:
 	rm -f *.o
