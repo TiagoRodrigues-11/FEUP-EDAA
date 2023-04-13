@@ -3,7 +3,14 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
-#include "BS_thread_pool.hpp"
+#include <algorithm>
+#include <thread>
+#include <mutex>
+
+#define MAX_THREADS std::thread::hardware_concurrency() - 1
+
+std::mutex mtx;
+unsigned int num_threads = 0;
 
 template <class Point>
 class KdTree;
@@ -50,7 +57,7 @@ class KdTree {
         void _insert(KdTreeNode<Point>* node, Point point, int depth, int k);
         void _remove(KdTreeNode<Point>* node, Point point, int depth, int k);
         bool inRange(Point point, Point min, Point max);
-        void buildTree(std::vector<Point> points, KdTreeNode<Point>* &node, int depth, BS::thread_pool &pool);
+        void buildTree(std::vector<Point> points, KdTreeNode<Point>* node, int depth);
         
     public:
         KdTree();
@@ -78,13 +85,12 @@ KdTree<Point>::KdTree(std::vector<Point> points) {
     // }
 
     this->num_threads = std::thread::hardware_concurrency() - 1;
-    BS::thread_pool pool(this->num_threads);
 
-    this->buildTree(points, root, 0, pool);
+    this->buildTree(points, root, 0);
 }
 
 template <class Point>
-void KdTree<Point>::buildTree(std::vector<Point> points, KdTreeNode<Point>* &node, int depth, BS::thread_pool &pool) {
+void KdTree<Point>::buildTree(std::vector<Point> points, KdTreeNode<Point>* node, int depth) {
     if(points.size() == 0) {
         node = nullptr;
         return;
@@ -104,18 +110,28 @@ void KdTree<Point>::buildTree(std::vector<Point> points, KdTreeNode<Point>* &nod
     std::vector<Point> leftPoints(points.begin(), points.begin() + median);
     std::vector<Point> rightPoints(points.begin() + median + 1, points.end());
 
-    if(leftPoints.size() > 100000 && rightPoints.size() > 1 && pool.get_tasks_running() < this->num_threads){
-        auto task = pool.submit([this, &node, &leftPoints, depth, axis, &pool] {
-            this->buildTree(leftPoints, node->left, depth + 1, pool);
-        });
+    if(num_threads < MAX_THREADS){
+        mtx.lock();
 
-        this->buildTree(rightPoints, node->right, depth + 1, pool);
+        num_threads++;
 
-        task.get();
+        mtx.unlock();
+
+        std::thread leftThread(&KdTree<Point>::buildTree, this, leftPoints, node->left, depth + 1);
+
+        this->buildTree(rightPoints, node->right, depth + 1);
+
+        leftThread.join();
+
+        mtx.lock();
+
+        num_threads--;
+
+        mtx.unlock();
     }
     else{
-        this->buildTree(leftPoints, node->left, depth + 1, pool);
-        this->buildTree(rightPoints, node->right, depth + 1, pool);
+        this->buildTree(leftPoints, node->left, depth + 1);
+        this->buildTree(rightPoints, node->right, depth + 1);
     }
 }
 
