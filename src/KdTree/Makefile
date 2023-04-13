@@ -9,7 +9,7 @@ Song.o: Song.cpp Song.h
 main.o: Song.o main.cpp
 	$(CXX) $(CXXFLAGS) -c main.cpp
 
-main: main.o Song.o
+main: clean main.o Song.o
 	$(CXX) $(CXXFLAGS) main.o Song.o -o KdTree.exe
 
 clean:
