@@ -13,4 +13,4 @@ main: main.o Song.o
 	$(CXX) $(CXXFLAGS) main.o Song.o -o KdTree.exe
 
 clean:
-	rm -f *.o
+	del /f *.o *.exe
