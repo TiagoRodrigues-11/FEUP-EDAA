@@ -5,12 +5,11 @@
 #include <iostream>
 #include <algorithm>
 #include <thread>
-#include <mutex>
+#include <atomic>
 
 #define MAX_THREADS std::thread::hardware_concurrency() - 1
 
-std::mutex mtx;
-unsigned int num_threads = 0;
+std::atomic<unsigned int> num_threads_atomic (0);
 
 template <class Point>
 class KdTree;
@@ -53,7 +52,6 @@ template <class Point>
 class KdTree {
     private:
         KdTreeNode<Point>* root;
-        size_t num_threads;
         void _insert(KdTreeNode<Point>* node, Point point, int depth, int k);
         void _remove(KdTreeNode<Point>* node, Point point, int depth, int k);
         bool inRange(Point point, Point min, Point max);
@@ -84,8 +82,6 @@ KdTree<Point>::KdTree(std::vector<Point> points) {
     //     this->insert(points[i]);
     // }
 
-    this->num_threads = std::thread::hardware_concurrency() - 1;
-
     this->buildTree(points, root, 0);
 }
 
@@ -110,12 +106,8 @@ void KdTree<Point>::buildTree(std::vector<Point> points, KdTreeNode<Point>* node
     std::vector<Point> leftPoints(points.begin(), points.begin() + median);
     std::vector<Point> rightPoints(points.begin() + median + 1, points.end());
 
-    if(num_threads < MAX_THREADS){
-        mtx.lock();
-
-        num_threads++;
-
-        mtx.unlock();
+    if(num_threads_atomic < MAX_THREADS){
+        num_threads_atomic++;
 
         std::thread leftThread(&KdTree<Point>::buildTree, this, leftPoints, node->left, depth + 1);
 
@@ -123,11 +115,7 @@ void KdTree<Point>::buildTree(std::vector<Point> points, KdTreeNode<Point>* node
 
         leftThread.join();
 
-        mtx.lock();
-
-        num_threads--;
-
-        mtx.unlock();
+        num_threads_atomic--;
     }
     else{
         this->buildTree(leftPoints, node->left, depth + 1);
