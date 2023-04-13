@@ -1,3 +1,5 @@
 **.sqlite
 KdTree/*.o
 KdTree/*.exe
+KdTree/KdTree
+KdTree/cachegrind.out.*
