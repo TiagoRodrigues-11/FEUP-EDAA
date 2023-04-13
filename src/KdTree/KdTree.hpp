@@ -11,6 +11,8 @@
 
 std::atomic<unsigned int> num_threads_atomic (0);
 
+double sort_time[16] = {0};
+
 template <class Point>
 class KdTree;
 
@@ -55,11 +57,11 @@ class KdTree {
         void _insert(KdTreeNode<Point>* node, Point point, int depth, int k);
         void _remove(KdTreeNode<Point>* node, Point point, int depth, int k);
         bool inRange(Point point, Point min, Point max);
-        void buildTree(std::vector<Point> points, KdTreeNode<Point>* node, int depth);
+        void buildTree(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, KdTreeNode<Point>* node, int depth, int thread_no);
         
     public:
         KdTree();
-        KdTree(std::vector<Point> points);
+        KdTree(std::vector<Point> &points);
         ~KdTree();
         void insert(Point point);
         void remove(Point point);
@@ -75,51 +77,60 @@ KdTree<Point>::KdTree() {
 }
 
 template <class Point>
-KdTree<Point>::KdTree(std::vector<Point> points) {
+KdTree<Point>::KdTree(std::vector<Point> &points) {
     this->root = nullptr;
     
     // for (size_t i = 0; i < points.size(); i++) { //I THINK WITH THIS THE TREE ISN'T BALANCED
     //     this->insert(points[i]);
     // }
 
-    this->buildTree(points, root, 0);
+    this->buildTree(points.begin(), points.end(), root, 0, 0);
+
+    for (size_t i = 0; i < MAX_THREADS; i++) {
+        std::cout << "Thread " << i << " sort time: " << sort_time[i] << std::endl;
+    }
 }
 
 template <class Point>
-void KdTree<Point>::buildTree(std::vector<Point> points, KdTreeNode<Point>* node, int depth) {
-    if(points.size() == 0) {
+void KdTree<Point>::buildTree(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, KdTreeNode<Point>* node, int depth, int thread_no) {
+    if(_begin == _end) {
         node = nullptr;
         return;
     }
 
-    int axis = depth % points[0].dimensions();
+    int axis = depth % _begin->dimensions();
 
-    std::sort(points.begin(), points.end(), [axis](Point a, Point b) { //TO IMPROVE - FOR BETTER PERFORMACE - IT TAKES A LOT OF TIME
+    auto start = std::chrono::system_clock::now();
+
+    // Make a KdTree
+    std::sort(_begin, _end, [axis](Point a, Point b) { //TO IMPROVE - FOR BETTER PERFORMACE - IT TAKES A LOT OF TIME
         return a[axis] < b[axis];
     });
 
+    auto end = std::chrono::system_clock::now();
 
-    int median = points.size() / 2;
+    std::chrono::duration<double> elapsed_seconds = end - start;
 
-    node = new KdTreeNode<Point>(points[median]);
+    sort_time[thread_no] += ((double) elapsed_seconds.count());
 
-    std::vector<Point> leftPoints(points.begin(), points.begin() + median);
-    std::vector<Point> rightPoints(points.begin() + median + 1, points.end());
+    int median = ((int) (_end - _begin)) / 2;
+
+    node = new KdTreeNode<Point>(*(_begin + median));
 
     if(num_threads_atomic < MAX_THREADS){
         num_threads_atomic++;
 
-        std::thread leftThread(&KdTree<Point>::buildTree, this, leftPoints, node->left, depth + 1);
+        std::thread leftThread(&KdTree<Point>::buildTree, this, _begin, _begin + median, node->left, depth + 1, thread_no + 1);
 
-        this->buildTree(rightPoints, node->right, depth + 1);
+        this->buildTree(_begin + median + 1, _end, node->right, depth + 1, thread_no);
 
         leftThread.join();
 
         num_threads_atomic--;
     }
     else{
-        this->buildTree(leftPoints, node->left, depth + 1);
-        this->buildTree(rightPoints, node->right, depth + 1);
+        this->buildTree(_begin, _begin + median, node->left, depth + 1, thread_no);
+        this->buildTree(_begin + median + 1, _end, node->right, depth + 1, thread_no);
     }
 }
 
