@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -Wall -Wextra -pedantic -std=c++17 -pthread
+CXXFLAGS = -std=c++17 -O3 -Wall -Wextra -Wconversion -Wsign-conversion -Wpedantic -pthread
 
 target: main
 
