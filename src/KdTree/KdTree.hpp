@@ -73,6 +73,7 @@ public:
     void print(KdTreeNode<Point> *node, int depth);
     void rangeSearch(Point point, Point min, Point max, int depth, std::vector<Point> &points);
     Point nearestNeighborSearch(KdTreeNode<Point> node, Point query, int depth, double best_dist);
+    KdTreeNode<Point> *getRoot() { return root;}
 };
 
 template <class Point>
@@ -304,4 +305,6 @@ Point KdTree<Point>::nearestNeighborSearch(KdTreeNode<Point> node, Point query, 
             best_point = bad_side_best;
         }
     }
+
+    return best_point;
 }
