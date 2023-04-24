@@ -13,7 +13,7 @@ int main(){
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0, 1);
     Song song1;
-    for (int i = 0; i < 87500; i++) {
+    for (int i = 0; i < 8750000; i++) {
         Song song = Song("Song " + std::to_string(i), "Artist " + std::to_string(i), dis(gen), dis
             (gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen));
         songs.push_back(song);
@@ -39,6 +39,6 @@ int main(){
     
     cout << "Finished in: " << elapsed_seconds.count() << "s" << endl;
 
-    Song neighbour = tree.nearestNeighborSearch(*(tree.getRoot()), song1, 0, INFINITY);
-    std::cout << "Nearest neighbour: " << neighbour.getName() << " " << neighbour.getArtist() << " " << neighbour[0] << " " << neighbour[1] << " " << neighbour[2] << " " << neighbour[3] << " " << neighbour[4] << " " << neighbour[5] << " " << neighbour[6] << " " << neighbour[7] << " " << neighbour[8] << " " << neighbour[9] << " " << neighbour[10] << " " << neighbour[11] << std::endl;
+    // Song neighbour = tree.nearestNeighborSearch(*(tree.getRoot()), song1, 0, INFINITY);
+    // std::cout << "Nearest neighbour: " << neighbour.getName() << " " << neighbour.getArtist() << " " << neighbour[0] << " " << neighbour[1] << " " << neighbour[2] << " " << neighbour[3] << " " << neighbour[4] << " " << neighbour[5] << " " << neighbour[6] << " " << neighbour[7] << " " << neighbour[8] << " " << neighbour[9] << " " << neighbour[10] << " " << neighbour[11] << std::endl;
 }

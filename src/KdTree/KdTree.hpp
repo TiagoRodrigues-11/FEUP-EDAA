@@ -63,6 +63,7 @@ private:
     void _remove(KdTreeNode<Point> *node, Point point, int depth, int k);
     bool inRange(Point point, Point min, Point max);
     void buildTree(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, KdTreeNode<Point> *node, int depth, int thread_no);
+    typename std::vector<Point>::iterator _splitVectorAndGetMedian(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, int depth, int sample_size);
 
 public:
     KdTree();
@@ -93,10 +94,68 @@ KdTree<Point>::KdTree(std::vector<Point> &points)
 
     this->buildTree(points.begin(), points.end(), root, 0, 0);
 
-    for (size_t i = 0; i < MAX_THREADS; i++)
+    for (size_t i = 0; i <= MAX_THREADS; i++)
     {
         std::cout << "Thread " << i << " sort time: " << sort_time[i] << std::endl;
     }
+}
+
+template <class Point>
+typename std::vector<Point>::iterator KdTree<Point>::_splitVectorAndGetMedian(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, int depth, int sample_size)
+{
+    int axis = depth % _begin->dimensions();
+
+    int size = _end - _begin;
+
+    if (size < sample_size)
+    {
+        sample_size = size;
+    }
+
+    std::vector<typename std::vector<Point>::iterator> sample(sample_size);
+
+    for (int i = 0; i < sample_size; i++)
+    {
+        int random_index = rand() % size;
+        sample[i] = _begin + random_index;
+    }
+
+    std::sort(sample.begin(), sample.end(), [axis](typename std::vector<Point>::iterator a, typename std::vector<Point>::iterator b) {
+        return (*a)[axis] < (*b)[axis];
+    });
+
+    int median = sample_size / 2;
+
+    typename std::vector<Point>::iterator median_pointer = sample[median];
+
+    // Reorder the vector so that the elements before the median are smaller than the median and the elements after the median are greater than the median
+    int i = 0;
+    int j = size - 1;
+
+    while (i < j)
+    {
+        // Find the first element that is greater than the median
+        while (i < j && (*_begin)[axis] < (*median_pointer)[axis])
+        {
+            i++;
+        }
+
+        // Find the first element that is smaller than the median
+        while (i < j && (*median_pointer)[axis] < (*_begin)[axis])
+        {
+            j--;
+        }
+
+        // Swap the elements
+        if (i < j)
+        {
+            std::swap(*_begin, *(_begin + j));
+            i++;
+            j--;
+        }
+    }
+
+    return median_pointer;
 }
 
 template <class Point>
@@ -113,9 +172,11 @@ void KdTree<Point>::buildTree(typename std::vector<Point>::iterator _begin, type
     auto start = std::chrono::system_clock::now();
 
     // Make a KdTree
-    std::sort(_begin, _end, [axis](Point a, Point b) { // TO IMPROVE - FOR BETTER PERFORMACE - IT TAKES A LOT OF TIME
-        return a[axis] < b[axis];
-    });
+    // std::sort(_begin, _end, [axis](Point a, Point b) { // TO IMPROVE - FOR BETTER PERFORMACE - IT TAKES A LOT OF TIME
+    //     return a[axis] < b[axis];
+    // });
+
+    typename std::vector<Point>::iterator median_pointer = this->_splitVectorAndGetMedian(_begin, _end, depth, 1000);
 
     auto end = std::chrono::system_clock::now();
 
@@ -123,17 +184,15 @@ void KdTree<Point>::buildTree(typename std::vector<Point>::iterator _begin, type
 
     sort_time[thread_no] += ((double)elapsed_seconds.count());
 
-    int median = ((int)(_end - _begin)) / 2;
-
-    node = new KdTreeNode<Point>(*(_begin + median));
+    node = new KdTreeNode<Point>(*median_pointer);
 
     if (num_threads_atomic < MAX_THREADS && _end - _begin > 100000)
     {
         num_threads_atomic++;
 
-        std::thread leftThread(&KdTree<Point>::buildTree, this, _begin, _begin + median, node->left, depth + 1, thread_no + 1);
+        std::thread leftThread(&KdTree<Point>::buildTree, this, _begin, median_pointer, node->left, depth + 1, thread_no + 1);
 
-        this->buildTree(_begin + median + 1, _end, node->right, depth + 1, thread_no);
+        this->buildTree(median_pointer + 1, _end, node->right, depth + 1, thread_no);
 
         leftThread.join();
 
@@ -141,8 +200,8 @@ void KdTree<Point>::buildTree(typename std::vector<Point>::iterator _begin, type
     }
     else
     {
-        this->buildTree(_begin, _begin + median, node->left, depth + 1, thread_no);
-        this->buildTree(_begin + median + 1, _end, node->right, depth + 1, thread_no);
+        this->buildTree(_begin, median_pointer, node->left, depth + 1, thread_no);
+        this->buildTree(median_pointer + 1, _end, node->right, depth + 1, thread_no);
     }
 }
 
@@ -253,58 +312,58 @@ void KdTree<Point>::print(KdTreeNode<Point> *node, int depth)
     this->print(node->right, depth + 1);
 }
 
-template <class Point>
-Point KdTree<Point>::nearestNeighborSearch(KdTreeNode<Point> node, Point query, int depth, double best_dist)
-{
-    if (this->root == nullptr)
-    {
-        return;
-    }
-    Point best_point;
+// template <class Point>
+// Point KdTree<Point>::nearestNeighborSearch(KdTreeNode<Point> node, Point query, int depth, double best_dist)
+// {
+//     if (this->root == nullptr)
+//     {
+//         return;
+//     }
+//     Point best_point;
 
-    // Check if current node is closer than best_dist
-    double dist = distance(node->point, query);
-    if (dist < best_dist)
-    {
-        best_dist = dist;
-        best_point = node->point;
-    }
+//     // Check if current node is closer than best_dist
+//     double dist = distance(node->point, query);
+//     if (dist < best_dist)
+//     {
+//         best_dist = dist;
+//         best_point = node->point;
+//     }
 
-    // Check which side of the tree to search first
-    int axis = depth % query.dimensions();
-    KdTreeNode<Point> *good_side;
-    KdTreeNode<Point> *bad_side;
-    if (query[axis] <= node->point[axis])
-    {
-        good_side = node->left;
-        bad_side = node->right;
-    }
-    else
-    {
-        good_side = node->right;
-        bad_side = node->left;
-    }
+//     // Check which side of the tree to search first
+//     int axis = depth % query.dimensions();
+//     KdTreeNode<Point> *good_side;
+//     KdTreeNode<Point> *bad_side;
+//     if (query[axis] <= node->point[axis])
+//     {
+//         good_side = node->left;
+//         bad_side = node->right;
+//     }
+//     else
+//     {
+//         good_side = node->right;
+//         bad_side = node->left;
+//     }
 
-    // Search good side first
-    Point good_side_best = this->nearestNeighborSearch(good_side, query, depth + 1, best_dist);
-    double good_side_best_dist = distance(good_side_best, query);
-    if (good_side_best_dist < best_dist)
-    {
-        best_dist = good_side_best_dist;
-        best_point = good_side_best;
-    }
+//     // Search good side first
+//     Point good_side_best = this->nearestNeighborSearch(good_side, query, depth + 1, best_dist);
+//     double good_side_best_dist = distance(good_side_best, query);
+//     if (good_side_best_dist < best_dist)
+//     {
+//         best_dist = good_side_best_dist;
+//         best_point = good_side_best;
+//     }
 
-    // Check if bad side is worth searching
-    if (distance(query[axis], node->point[axis]) < best_dist)
-    {
-        Point bad_side_best = this->nearestNeighborSearch(bad_side, query, depth + 1, best_dist);
-        double bad_side_best_dist = distance(bad_side_best, query);
-        if (bad_side_best_dist < best_dist)
-        {
-            best_dist = bad_side_best_dist;
-            best_point = bad_side_best;
-        }
-    }
+//     // Check if bad side is worth searching
+//     if (distance(query[axis], node->point[axis]) < best_dist)
+//     {
+//         Point bad_side_best = this->nearestNeighborSearch(bad_side, query, depth + 1, best_dist);
+//         double bad_side_best_dist = distance(bad_side_best, query);
+//         if (bad_side_best_dist < best_dist)
+//         {
+//             best_dist = bad_side_best_dist;
+//             best_point = bad_side_best;
+//         }
+//     }
 
-    return best_point;
-}
+//     return best_point;
+// }
