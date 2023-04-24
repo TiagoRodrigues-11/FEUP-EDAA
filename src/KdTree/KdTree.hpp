@@ -37,7 +37,9 @@ template <class Point>
 KdTreeNode<Point>::KdTreeNode(Point point, bool end)
 {
     this->point = point;
+
     this->left = !end ? (KdTreeNode<Point> *) malloc(sizeof(KdTreeNode<Point>)) : nullptr;
+
     this->right = !end ? (KdTreeNode<Point> *) malloc(sizeof(KdTreeNode<Point>)) : nullptr;
 }
 
@@ -62,7 +64,7 @@ private:
     void _insert(KdTreeNode<Point> *node, Point point, int depth, int k);
     void _remove(KdTreeNode<Point> *node, Point point, int depth, int k);
     bool inRange(Point point, Point min, Point max);
-    void buildTree(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, KdTreeNode<Point> *node, int depth, int thread_no, bool first_call);
+    void buildTree(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, KdTreeNode<Point> *node, int depth, int thread_no);
     typename std::vector<Point>::iterator _splitVectorAndGetMedian(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, int depth, size_t sample_size);
 
 public:
@@ -88,7 +90,7 @@ KdTree<Point>::KdTree(std::vector<Point> &points)
 {
     this->root = (KdTreeNode<Point> *) malloc(sizeof(KdTreeNode<Point>));
 
-    this->buildTree(points.begin(), points.end(), root, 0, 0, true);
+    this->buildTree(points.begin(), points.end(), root, 0, 0);
 
     std::cout << "Number of threads: " << num_threads_atomic << std::endl;
 
@@ -133,25 +135,36 @@ typename std::vector<Point>::iterator KdTree<Point>::_splitVectorAndGetMedian(ty
 }
 
 template <class Point>
-void KdTree<Point>::buildTree(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, KdTreeNode<Point> *node, int depth, int thread_no, bool first_call)
+void KdTree<Point>::buildTree(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, KdTreeNode<Point> *node, int depth, int thread_no)
 {
     if (_begin == _end)
     {
         *node = KdTreeNode<Point>(Point(), true);
+        std::cout << "End of the road pal" << std::endl;
         return;
     }
+    
+    auto start = std::chrono::system_clock::now();
 
     typename std::vector<Point>::iterator median_pointer = this->_splitVectorAndGetMedian(_begin, _end, depth, 1000);
 
-    *node = KdTreeNode<Point>(*median_pointer);
+    auto end = std::chrono::system_clock::now();
+
+    std::chrono::duration<double> elapsed_seconds = end - start;
+
+    sort_time[thread_no] += ((double)elapsed_seconds.count());
+    
+    KdTreeNode node_obj = KdTreeNode<Point>(*median_pointer);
+
+    *node = node_obj;
 
     if (num_threads_atomic < MAX_THREADS && _end - _begin > 100000)
     {
         num_threads_atomic++;
 
-        std::thread leftThread(&KdTree<Point>::buildTree, this, _begin, median_pointer, node->left, depth + 1, thread_no + 1, false);
+        std::thread leftThread(&KdTree<Point>::buildTree, this, _begin, median_pointer, node->left, depth + 1, thread_no + 1);
 
-        this->buildTree(median_pointer + 1, _end, node->right, depth + 1, thread_no, false);
+        this->buildTree(median_pointer + 1, _end, node->right, depth + 1, thread_no);
 
         leftThread.join();
 
@@ -159,14 +172,12 @@ void KdTree<Point>::buildTree(typename std::vector<Point>::iterator _begin, type
     }
     else
     {
-        this->buildTree(_begin, median_pointer, node->left, depth + 1, thread_no, false);
-        this->buildTree(median_pointer + 1, _end, node->right, depth + 1, thread_no, false);
+        this->buildTree(_begin, median_pointer, node->left, depth + 1, thread_no);
+
+        this->buildTree(median_pointer + 1, _end, node->right, depth + 1, thread_no);
     }
 
-    if (first_call)
-    {
-        std::cout << "Number of threads: " << num_threads_atomic << std::endl;
-    }
+    return;
 }
 
 template <class Point>
