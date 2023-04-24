@@ -112,50 +112,27 @@ typename std::vector<Point>::iterator KdTree<Point>::_splitVectorAndGetMedian(ty
         sample_size = size;
     }
 
-    std::vector<typename std::vector<Point>::iterator> sample(sample_size);
+    std::vector<Point> sample(sample_size);
 
     for (int i = 0; i < sample_size; i++)
     {
         int random_index = rand() % size;
-        sample[i] = _begin + random_index;
+        sample[i] = *(_begin + random_index);
     }
 
-    std::sort(sample.begin(), sample.end(), [axis](typename std::vector<Point>::iterator a, typename std::vector<Point>::iterator b) {
-        return (*a)[axis] < (*b)[axis];
+    std::sort(sample.begin(), sample.end(), [axis](Point a, Point b) {
+        return a[axis] < b[axis];
     });
 
-    int median = sample_size / 2;
-
-    typename std::vector<Point>::iterator median_pointer = sample[median];
+    double median = sample[sample_size / 2][axis];
 
     // Reorder the vector so that the elements before the median are smaller than the median and the elements after the median are greater than the median
-    int i = 0;
-    int j = size - 1;
 
-    while (i < j)
-    {
-        // Find the first element that is greater than the median
-        while (i < j && (*_begin)[axis] < (*median_pointer)[axis])
-        {
-            i++;
-        }
-
-        // Find the first element that is smaller than the median
-        while (i < j && (*median_pointer)[axis] < (*_begin)[axis])
-        {
-            j--;
-        }
-
-        // Swap the elements
-        if (i < j)
-        {
-            std::swap(*_begin, *(_begin + j));
-            i++;
-            j--;
-        }
-    }
-
-    return median_pointer;
+    typename std::vector<Point>::iterator median_iterator = std::partition(_begin, _end, [median, axis](Point a) {
+        return a[axis] <= median;
+    });
+    
+    return median_iterator;
 }
 
 template <class Point>
