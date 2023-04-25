@@ -1,3 +1,0 @@
-/mnt/c/Users/dluis/Documents/Docs/Universidade/M 1 ano/EDAA/Project 2/src/KdTree/CMakeFiles/KdTree.dir
-/mnt/c/Users/dluis/Documents/Docs/Universidade/M 1 ano/EDAA/Project 2/src/KdTree/CMakeFiles/edit_cache.dir
-/mnt/c/Users/dluis/Documents/Docs/Universidade/M 1 ano/EDAA/Project 2/src/KdTree/CMakeFiles/rebuild_cache.dir

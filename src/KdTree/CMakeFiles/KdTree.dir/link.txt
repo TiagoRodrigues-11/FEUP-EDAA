@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3 -Wall -Wextra -Wconversion -Wsign-conversion -Wpedantic -pthread -lpqxx -lpq CMakeFiles/KdTree.dir/main.cpp.o CMakeFiles/KdTree.dir/Song.cpp.o -o KdTree  /usr/local/lib/libpqxx-7.7.a /usr/lib/x86_64-linux-gnu/libpq.so 
