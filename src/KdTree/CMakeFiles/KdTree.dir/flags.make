@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I"/mnt/c/Users/dluis/Documents/Docs/Universidade/M 1 ano/EDAA/Project 2/src/KdTree/build-pqxx/include" -I"/mnt/c/Users/dluis/Documents/Docs/Universidade/M 1 ano/EDAA/Project 2/src/KdTree/libpqxx-7.7.5/include"
+CXX_INCLUDES = 
 
-CXX_FLAGS =  -O3 -Wall -Wextra -Wconversion -Wsign-conversion -Wpedantic -pthread
+CXX_FLAGS =  -O3 -Wall -Wextra -Wconversion -Wsign-conversion -Wpedantic -pthread -lpqxx -lpq
 

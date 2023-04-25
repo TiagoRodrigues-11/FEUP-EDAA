@@ -108,7 +108,7 @@ KdTree_EXTERNAL_OBJECTS =
 KdTree: CMakeFiles/KdTree.dir/main.cpp.o
 KdTree: CMakeFiles/KdTree.dir/Song.cpp.o
 KdTree: CMakeFiles/KdTree.dir/build.make
-KdTree: build-pqxx/src/libpqxx-7.7.a
+KdTree: /usr/local/lib/libpqxx-7.7.a
 KdTree: /usr/lib/x86_64-linux-gnu/libpq.so
 KdTree: CMakeFiles/KdTree.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir="/mnt/c/Users/dluis/Documents/Docs/Universidade/M 1 ano/EDAA/Project 2/src/KdTree/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX executable KdTree"

@@ -253,7 +253,7 @@ void KdTree<Point>::print(KdTreeNode<Point> *node, int depth)
     this->print(node->right, depth + 1);
 }
 
-template <class Point>
+/* template <class Point>
 Point KdTree<Point>::nearestNeighborSearch(KdTreeNode<Point> node, Point query, int depth, double best_dist)
 {
     if (this->root == nullptr)
@@ -307,4 +307,4 @@ Point KdTree<Point>::nearestNeighborSearch(KdTreeNode<Point> node, Point query, 
     }
 
     return best_point;
-}
+} */
