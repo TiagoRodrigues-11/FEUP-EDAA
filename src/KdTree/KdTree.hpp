@@ -177,6 +177,8 @@ void KdTree<Point>::buildTree(std::vector<Point> &points, KdTreeNode<Point>* &no
 
     leftPoints.pop_back();
 
+    points.clear();
+
     auto end = std::chrono::system_clock::now();
 
     std::chrono::duration<double> elapsed_seconds = end - start;
@@ -187,7 +189,7 @@ void KdTree<Point>::buildTree(std::vector<Point> &points, KdTreeNode<Point>* &no
 
     node = node_obj;
 
-    if (num_threads_atomic < MAX_THREADS && points.size() > 1)
+    if (num_threads_atomic < MAX_THREADS && leftPoints.size() + rightPoints.size() > 100000)
     {
         num_threads_atomic++;
 
