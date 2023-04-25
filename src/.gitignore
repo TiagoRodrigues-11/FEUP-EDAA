@@ -6,3 +6,4 @@ KdTree/cachegrind.out.*
 KdTree/CMakeFiles/
 KdTree/Makefile
 KdTree/CMakeCache.txt
+KdTree/*.cmake
