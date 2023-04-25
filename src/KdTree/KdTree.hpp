@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <thread>
 #include <atomic>
+#include <set>
+#include <string>
 
 #define MAX_THREADS std::thread::hardware_concurrency() - 1
 
@@ -25,7 +27,7 @@ private:
     KdTreeNode<Point> *right;
 
 public:
-    KdTreeNode(Point point, bool end = false);
+    KdTreeNode(Point point);
     ~KdTreeNode();
 
     void print();
@@ -34,20 +36,20 @@ public:
 };
 
 template <class Point>
-KdTreeNode<Point>::KdTreeNode(Point point, bool end)
+KdTreeNode<Point>::KdTreeNode(Point point)
 {
     this->point = point;
 
-    this->left = !end ? (KdTreeNode<Point> *) malloc(sizeof(KdTreeNode<Point>)) : nullptr;
+    this->left = nullptr;
 
-    this->right = !end ? (KdTreeNode<Point> *) malloc(sizeof(KdTreeNode<Point>)) : nullptr;
+    this->right = nullptr;
 }
 
 template <class Point>
 KdTreeNode<Point>::~KdTreeNode()
 {
-    free(left);
-    free(right);
+    delete left;
+    delete right;
 }
 
 template <class Point>
@@ -64,8 +66,8 @@ private:
     void _insert(KdTreeNode<Point> *node, Point point, int depth, int k);
     void _remove(KdTreeNode<Point> *node, Point point, int depth, int k);
     bool inRange(Point point, Point min, Point max);
-    void buildTree(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, KdTreeNode<Point> *node, int depth, int thread_no);
-    typename std::vector<Point>::iterator _splitVectorAndGetMedian(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, int depth, size_t sample_size);
+    void buildTree(std::vector<Point> &points, KdTreeNode<Point> *&node, int depth, int thread_no, bool right = true);
+    void _splitVector(std::vector<Point> &points, int depth, size_t sample_size, std::vector<Point> &leftPoints, std::vector<Point> &rightPoints);
 
 public:
     KdTree();
@@ -86,11 +88,10 @@ KdTree<Point>::KdTree()
 }
 
 template <class Point>
-KdTree<Point>::KdTree(std::vector<Point> &points)
-{
-    this->root = (KdTreeNode<Point> *) malloc(sizeof(KdTreeNode<Point>));
+KdTree<Point>::KdTree(std::vector<Point> &points){
+    this->root = nullptr;
 
-    this->buildTree(points.begin(), points.end(), root, 0, 0);
+    this->buildTree(points, this->root, 0, 0, true);
 
     std::cout << "Number of threads: " << num_threads_atomic << std::endl;
 
@@ -101,23 +102,34 @@ KdTree<Point>::KdTree(std::vector<Point> &points)
 }
 
 template <class Point>
-typename std::vector<Point>::iterator KdTree<Point>::_splitVectorAndGetMedian(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, int depth, size_t sample_size)
+void KdTree<Point>::_splitVector(std::vector<Point> &points, int depth, size_t sample_size, std::vector<Point> &leftPoints, std::vector<Point> &rightPoints)
 {
-    int axis = depth % _begin->dimensions();
+    int axis = depth % points[0].dimensions();
 
-    size_t size = (size_t) (_end - _begin);
+    size_t size = points.size();
 
     if (size < sample_size)
     {
         sample_size = size;
     }
 
-    std::vector<Point> sample(sample_size);
+    std::set<int> used_indices;
+    std::vector<Point> sample;
 
-    for (size_t i = 0; i < sample_size; i++)
+    while (sample.size() < sample_size)
     {
-        size_t random_index = (size_t) rand() % size;
-        sample[i] = *(_begin + (long long int) random_index);
+        while (true)
+        {
+            // Generate a random index between 0 and size - 1 (inclusive)
+            size_t random_index = (size_t) rand() % size;
+
+            if (used_indices.find(random_index) == used_indices.end())
+            {
+                used_indices.insert(random_index);
+                sample.push_back(points[random_index]);
+                break;
+            }
+        }
     }
 
     std::sort(sample.begin(), sample.end(), [axis](Point a, Point b) {
@@ -127,54 +139,71 @@ typename std::vector<Point>::iterator KdTree<Point>::_splitVectorAndGetMedian(ty
     double median = sample[sample_size / 2][axis];
 
     // Reorder the vector so that the elements before the median are smaller than the median and the elements after the median are greater than the median
-    typename std::vector<Point>::iterator median_iterator = std::partition(_begin, _end, [median, axis](Point a) {
+    typename std::vector<Point>::iterator median_iterator = std::partition(points.begin(), points.end(), [median, axis](Point a) {
         return a[axis] <= median;
     });
-    
-    return median_iterator;
+
+    leftPoints.assign(points.begin(), median_iterator);
+
+    if (median_iterator == points.end())
+        rightPoints.clear();
+    else
+        rightPoints.assign(median_iterator, points.end());
 }
 
 template <class Point>
-void KdTree<Point>::buildTree(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, KdTreeNode<Point> *node, int depth, int thread_no)
-{
-    if (_begin == _end)
+void KdTree<Point>::buildTree(std::vector<Point> &points, KdTreeNode<Point>* &node, int depth, int thread_no, bool right)
+{    
+    // Case: reached the leaf 
+    if (points.size() == 1)
     {
-        *node = KdTreeNode<Point>(Point(), true);
-        std::cout << "End of the road pal" << std::endl;
+        KdTreeNode<Point> * node_obj = new KdTreeNode<Point>(points[0]);
+        node = node_obj;
+        return;
+    }
+    if (points.empty())
+    {
         return;
     }
     
     auto start = std::chrono::system_clock::now();
 
-    typename std::vector<Point>::iterator median_pointer = this->_splitVectorAndGetMedian(_begin, _end, depth, 1000);
+    std::vector<Point> leftPoints;
+    std::vector<Point> rightPoints;
+
+    this->_splitVector(points, depth, 1000, leftPoints, rightPoints);
+
+    Point median = leftPoints[leftPoints.size() - 1];
+
+    leftPoints.pop_back();
 
     auto end = std::chrono::system_clock::now();
 
     std::chrono::duration<double> elapsed_seconds = end - start;
 
     sort_time[thread_no] += ((double)elapsed_seconds.count());
-    
-    KdTreeNode node_obj = KdTreeNode<Point>(*median_pointer);
 
-    *node = node_obj;
+    KdTreeNode<Point> * node_obj = new KdTreeNode<Point>(median);
 
-    if (num_threads_atomic < MAX_THREADS && _end - _begin > 100000)
+    node = node_obj;
+
+    if (num_threads_atomic < MAX_THREADS && points.size() > 1)
     {
         num_threads_atomic++;
 
-        std::thread leftThread(&KdTree<Point>::buildTree, this, _begin, median_pointer, node->left, depth + 1, thread_no + 1);
-
-        this->buildTree(median_pointer + 1, _end, node->right, depth + 1, thread_no);
+        std::thread leftThread(&KdTree<Point>::buildTree, this, std::ref(leftPoints), std::ref(node->left), depth + 1, thread_no + 1, false);
+        
+        this->buildTree(rightPoints, std::ref(node->right), depth + 1, thread_no);
 
         leftThread.join();
 
         num_threads_atomic--;
+
     }
     else
     {
-        this->buildTree(_begin, median_pointer, node->left, depth + 1, thread_no);
-
-        this->buildTree(median_pointer + 1, _end, node->right, depth + 1, thread_no);
+        this->buildTree(leftPoints, std::ref(node->left), depth + 1, thread_no, false);
+        this->buildTree(rightPoints, std::ref(node->right), depth + 1, thread_no);
     }
 
     return;

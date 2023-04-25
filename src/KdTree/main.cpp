@@ -13,7 +13,7 @@ int main(){
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0, 1);
     Song song1;
-    for (int i = 0; i < 8750000; i++) {
+    for (int i = 0; i < 8741640; i++) {
         Song song = Song("Song " + std::to_string(i), "Artist " + std::to_string(i), dis(gen), dis
             (gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen));
         songs.push_back(song);
