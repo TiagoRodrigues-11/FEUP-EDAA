@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "Song.h"
 #include "KdTree.hpp"
 #include <random>
@@ -7,27 +8,35 @@
 
 using namespace std;
 
+string getEnvVariableFromFile(string envPath, string variableName) {
+    ifstream envFile(envPath);
+    string line;
+    while (getline(envFile, line)) {
+        if (line.find(variableName) != string::npos) {
+            return line.substr(line.find("=") + 1);
+        }
+    }
+    return "";
+}
+
 int main(int argc, char* argv[]){
+    // Check arguments
     if (argc != 2) {
-        cout << "Usage: " << argv[0] << " <minimum song popularity>" << endl;
+        cout << "Usage: " << argv[0] << " <minimum song popularity> [env file path]" << endl;
         return 1;
     }
-    printf("Starting with minimum song popularity %s\n", argv[1]);
-    // Make 10 random songs
-    std::vector<Song> songs;
-    /* std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(0, 1);
-    Song song1;
-    for (int i = 0; i < 1; i++) {
-        Song song = Song("Song " + std::to_string(i), "Artist " + std::to_string(i), dis(gen), dis
-            (gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen));
-        songs.push_back(song);
-        song1 = song;
-    } */
 
-    //Change hostaddr to your address
-    pqxx::connection c("dbname=db user=postgres password=password hostaddr=192.168.208.1 port=5432");
+    // Get environment variables
+    string envPath = argc == 3 ? argv[2] : ".env";
+    string hostaddr = getEnvVariableFromFile(envPath, "POSTGRES_HOST_ADDRESS");
+
+    char connString[1024] = {0};
+    snprintf(connString, 1023, "dbname=db user=postgres password=password hostaddr=%s port=5432", hostaddr.c_str());
+
+    printf("Connecting to database at %s\n", hostaddr.c_str());
+    pqxx::connection c(connString);
+    
+    printf("Starting with minimum song popularity %s\n", argv[1]);
 
     pqxx::work tx(c);
 
@@ -44,6 +53,8 @@ int main(int argc, char* argv[]){
     pqxx::result r = tx.exec(sql);
 
     tx.commit();
+    
+    std::vector<Song> songs;
 
     for (pqxx::result::const_iterator c = r.begin(); c != r.end(); ++c) {
         Song song = Song(c[0].as<std::string>(), c[1].as<std::string>(), c[2].as<float>(), c[3].as<float>(), c[4].as<float>(), c[5].as<float>(), c[6].as<float>(), c[7].as<float>(), c[8].as<float>(), c[9].as<float>(), c[10].as<float>(), c[11].as<float>(), c[12].as<float>());
