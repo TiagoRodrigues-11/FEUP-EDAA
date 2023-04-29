@@ -7,7 +7,12 @@
 
 using namespace std;
 
-int main(){ 
+int main(int argc, char* argv[]){
+    if (argc != 2) {
+        cout << "Usage: " << argv[0] << " <minimum song popularity>" << endl;
+        return 1;
+    }
+    printf("Starting with minimum song popularity %s\n", argv[1]);
     // Make 10 random songs
     std::vector<Song> songs;
     /* std::random_device rd;
@@ -22,16 +27,19 @@ int main(){
     } */
 
     //Change hostaddr to your address
-    pqxx::connection c("dbname=db user=postgres password=password hostaddr=172.31.224.1 port=5432");
+    pqxx::connection c("dbname=db user=postgres password=password hostaddr=192.168.208.1 port=5432");
 
     pqxx::work tx(c);
 
-    const char* sql = "SELECT tracks.name, artists.name, acousticness, danceability, energy, instrumentalness, liveness, loudness, speechiness, tempo, valence, time_signature, mode " 
+    char sql[1024] = {0};
+    
+    // TODO: Change this to a query that only selects songs with a popularity above a certain threshold using new table
+    snprintf(sql, 1023, "SELECT tracks.name, artists.name, acousticness, danceability, energy, instrumentalness, liveness, loudness, speechiness, tempo, valence, time_signature, mode " 
                       "FROM audio_features "
                       "INNER JOIN tracks ON audio_features.id = tracks.audio_feature_id "
                       "INNER JOIN r_track_artist ON tracks.id = r_track_artist.track_id "
                       "INNER JOIN artists ON r_track_artist.artist_id = artists.id "
-                      "LIMIT 10";
+                      "LIMIT %s", argv[1]);
 
     pqxx::result r = tx.exec(sql);
 
