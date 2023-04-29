@@ -2,5 +2,5 @@
 **.sql
 !begin-transaction.sql
 !schema.sql
-!end-transaction.sql
+!create-tracks-table-and-end-transaction.sql
 .vscode/

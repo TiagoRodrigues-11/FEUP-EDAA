@@ -18,6 +18,6 @@ echo "Extracting data..."
 grep 'INSERT INTO' spotify-utf-8-no-pragma.sql > spotify-data.sql
 rm -f spotify-utf-8-no-pragma.sql
 echo "Creating new database sql file..."
-cat begin-transaction.sql schema.sql spotify-data.sql end-transaction.sql > spotify-postgres.sql
+cat begin-transaction.sql schema.sql spotify-data.sql create-tracks-table-and-end-transaction.sql > spotify-postgres.sql
 rm -f spotify-data.sql
 echo "Done."
