@@ -1,3 +1,7 @@
+COMMIT;
+
+BEGIN;
+
 DROP TABLE IF EXISTS tracks_info;
 
 CREATE TABLE tracks_info
