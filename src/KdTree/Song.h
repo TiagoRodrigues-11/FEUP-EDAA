@@ -12,7 +12,8 @@ class Song {
         std::string getArtist();
 
         // All attributes except name and artist
-        int dimensions();           
+        int dimensions();
+                  
         double operator[] (int i);
         bool operator== (Song song);
 
@@ -33,3 +34,4 @@ class Song {
         double time_signature;
         double mode;
 };
+
