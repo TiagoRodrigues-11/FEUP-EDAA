@@ -20,12 +20,12 @@ template <class Point>
 class KdTreeNode
 {
 private:
-    Point point;
+    Point * point;
     KdTreeNode<Point> *left;
     KdTreeNode<Point> *right;
 
 public:
-    KdTreeNode(Point point);
+    KdTreeNode(Point * point);
     ~KdTreeNode();
 
     void print();
@@ -34,7 +34,7 @@ public:
 };
 
 template <class Point>
-KdTreeNode<Point>::KdTreeNode(Point point)
+KdTreeNode<Point>::KdTreeNode(Point* point)
 {
     this->point = point;
     this->left = nullptr;
@@ -44,6 +44,7 @@ KdTreeNode<Point>::KdTreeNode(Point point)
 template <class Point>
 KdTreeNode<Point>::~KdTreeNode()
 {
+    delete point;
     delete left;
     delete right;
 }
@@ -51,7 +52,7 @@ KdTreeNode<Point>::~KdTreeNode()
 template <class Point>
 void KdTreeNode<Point>::print()
 {
-    std::cout << point << std::endl;
+    std::cout << *point << std::endl;
 }
 
 template <class Point>
@@ -62,14 +63,14 @@ private:
     void _insert(KdTreeNode<Point> *node, Point point, int depth, int k);
     void _remove(KdTreeNode<Point> *node, Point point, int depth, int k);
     bool inRange(Point point, Point min, Point max);
-    void buildTree(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, KdTreeNode<Point> *node, int depth, int thread_no);
+    void buildTree(typename std::vector<Point *>::iterator _begin, typename std::vector<Point *>::iterator _end, KdTreeNode<Point> *node, int depth, int thread_no);
 
 public:
     KdTree();
-    KdTree(std::vector<Point> &points);
+    KdTree(std::vector<Point *> &points);
     ~KdTree();
-    void insert(Point point);
-    void remove(Point point);
+    void insert(Point * point);
+    void remove(Point * point);
     void print(KdTreeNode<Point> *node, int depth);
     void rangeSearch(Point point, Point min, Point max, int depth, std::vector<Point> &points);
     Point nearestNeighborSearch(KdTreeNode<Point> node, Point query, int depth, double best_dist);
@@ -83,7 +84,7 @@ KdTree<Point>::KdTree()
 }
 
 template <class Point>
-KdTree<Point>::KdTree(std::vector<Point> &points)
+KdTree<Point>::KdTree(std::vector<Point *> &points)
 {
     this->root = nullptr;
 
@@ -100,7 +101,7 @@ KdTree<Point>::KdTree(std::vector<Point> &points)
 }
 
 template <class Point>
-void KdTree<Point>::buildTree(typename std::vector<Point>::iterator _begin, typename std::vector<Point>::iterator _end, KdTreeNode<Point> *node, int depth, int thread_no)
+void KdTree<Point>::buildTree(typename std::vector<Point *>::iterator _begin, typename std::vector<Point *>::iterator _end, KdTreeNode<Point> *node, int depth, int thread_no)
 {
     if (_begin == _end)
     {
@@ -108,13 +109,13 @@ void KdTree<Point>::buildTree(typename std::vector<Point>::iterator _begin, type
         return;
     }
 
-    int axis = depth % _begin->dimensions();
+    int axis = depth % (*_begin)->dimensions();
 
     auto start = std::chrono::system_clock::now();
 
     // Make a KdTree
     std::sort(_begin, _end, [axis](Point a, Point b) { // TO IMPROVE - FOR BETTER PERFORMACE - IT TAKES A LOT OF TIME
-        return a[axis] < b[axis];
+        return (*a)[axis] < (*b)[axis];
     });
 
     auto end = std::chrono::system_clock::now();

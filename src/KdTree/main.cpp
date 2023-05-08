@@ -54,10 +54,10 @@ int main(int argc, char* argv[]){
 
     tx.commit();
     
-    std::vector<Song> songs;
+    std::vector<Song *> songs;
 
     for (pqxx::result::const_iterator c = r.begin(); c != r.end(); ++c) {
-        Song song = Song(c[0].as<std::string>(), c[1].as<std::string>(), c[2].as<float>(), c[3].as<float>(), c[4].as<float>(), c[5].as<float>(), c[6].as<float>(), c[7].as<float>(), c[8].as<float>(), c[9].as<float>(), c[10].as<float>(), c[11].as<float>(), c[12].as<float>());
+        Song *song = new Song(c[0].as<std::string>(), c[1].as<std::string>(), c[2].as<float>(), c[3].as<float>(), c[4].as<float>(), c[5].as<float>(), c[6].as<float>(), c[7].as<float>(), c[8].as<float>(), c[9].as<float>(), c[10].as<float>(), c[11].as<float>(), c[12].as<float>());
         songs.push_back(song);
         //cout << c[0].as<string>() << endl << c[1].as<string>() << endl << c[2].as<string>() << endl;
     }
@@ -75,7 +75,7 @@ int main(int argc, char* argv[]){
     auto start = std::chrono::system_clock::now();
 
     // Make a KdTree
-    KdTree<Song> tree = KdTree<Song>(songs);
+    KdTree<Song *> tree = KdTree<Song* >(songs);
 
     auto end = std::chrono::system_clock::now();
 
