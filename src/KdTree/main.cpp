@@ -30,37 +30,45 @@ int main(int argc, char* argv[]){
     string envPath = argc == 3 ? argv[2] : ".env";
     string hostaddr = getEnvVariableFromFile(envPath, "POSTGRES_HOST_ADDRESS");
 
-    char connString[1024] = {0};
-    snprintf(connString, 1023, "dbname=db user=postgres password=password hostaddr=%s port=5432", hostaddr.c_str());
+    // char connString[1024] = {0};
+    // snprintf(connString, 1023, "dbname=db user=postgres password=password hostaddr=%s port=5432", hostaddr.c_str());
 
-    printf("Connecting to database at %s\n", hostaddr.c_str());
-    pqxx::connection c(connString);
+    // printf("Connecting to database at %s\n", hostaddr.c_str());
+    // pqxx::connection c(connString);
     
-    printf("Starting with minimum song popularity %s\n", argv[1]);
+    // printf("Starting with minimum song popularity %s\n", argv[1]);
 
-    pqxx::work tx(c);
+    // pqxx::work tx(c);
 
-    char sql[1024] = {0};
+    // char sql[1024] = {0};
     
-    // TODO: Change this to a query that only selects songs with a popularity above a certain threshold using new table
-    snprintf(sql, 1023, "SELECT tracks.name, artists.name, acousticness, danceability, energy, instrumentalness, liveness, loudness, speechiness, tempo, valence, time_signature, mode " 
-                      "FROM audio_features "
-                      "INNER JOIN tracks ON audio_features.id = tracks.audio_feature_id "
-                      "INNER JOIN r_track_artist ON tracks.id = r_track_artist.track_id "
-                      "INNER JOIN artists ON r_track_artist.artist_id = artists.id "
-                      "LIMIT %s", argv[1]);
+    // // TODO: Change this to a query that only selects songs with a popularity above a certain threshold using new table
+    // snprintf(sql, 1023, "SELECT tracks.name, artists.name, acousticness, danceability, energy, instrumentalness, liveness, loudness, speechiness, tempo, valence, time_signature, mode " 
+    //                   "FROM audio_features "
+    //                   "INNER JOIN tracks ON audio_features.id = tracks.audio_feature_id "
+    //                   "INNER JOIN r_track_artist ON tracks.id = r_track_artist.track_id "
+    //                   "INNER JOIN artists ON r_track_artist.artist_id = artists.id "
+    //                   "LIMIT %s", argv[1]);
 
-    pqxx::result r = tx.exec(sql);
+    // pqxx::result r = tx.exec(sql);
 
-    tx.commit();
+    // tx.commit();
     
     std::vector<Song *> songs;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0, 1);
 
+    for (int i = 0; i < 8741640; i++) {
+        Song *song = new Song("Song " + std::to_string(i), "Artist " + std::to_string(i), dis(gen), dis
+            (gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen), dis(gen));
+        songs.push_back(song);
+    /*
     for (pqxx::result::const_iterator c = r.begin(); c != r.end(); ++c) {
         Song *song = new Song(c[0].as<std::string>(), c[1].as<std::string>(), c[2].as<float>(), c[3].as<float>(), c[4].as<float>(), c[5].as<float>(), c[6].as<float>(), c[7].as<float>(), c[8].as<float>(), c[9].as<float>(), c[10].as<float>(), c[11].as<float>(), c[12].as<float>());
         songs.push_back(song);
         //cout << c[0].as<string>() << endl << c[1].as<string>() << endl << c[2].as<string>() << endl;
-    }
+    }*/
 
     cout << "Songs: " << songs.size() << endl;
 
@@ -75,7 +83,7 @@ int main(int argc, char* argv[]){
     auto start = std::chrono::system_clock::now();
 
     // Make a KdTree
-    KdTree<Song *> tree = KdTree<Song* >(songs);
+    KdTree<Song> tree = KdTree<Song>(songs);
 
     auto end = std::chrono::system_clock::now();
 

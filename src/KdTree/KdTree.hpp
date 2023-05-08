@@ -22,12 +22,12 @@ template <class Point>
 class KdTreeNode
 {
 private:
-    Point point;
+    Point * point;
     KdTreeNode<Point> *left;
     KdTreeNode<Point> *right;
 
 public:
-    KdTreeNode(Point point);
+    KdTreeNode(Point *point);
     ~KdTreeNode();
 
     void print();
@@ -36,18 +36,17 @@ public:
 };
 
 template <class Point>
-KdTreeNode<Point>::KdTreeNode(Point point)
+KdTreeNode<Point>::KdTreeNode(Point *point)
 {
     this->point = point;
-
     this->left = nullptr;
-
     this->right = nullptr;
 }
 
 template <class Point>
 KdTreeNode<Point>::~KdTreeNode()
 {
+    delete point;
     delete left;
     delete right;
 }
@@ -55,7 +54,7 @@ KdTreeNode<Point>::~KdTreeNode()
 template <class Point>
 void KdTreeNode<Point>::print()
 {
-    std::cout << point << std::endl;
+    std::cout << *point << std::endl;
 }
 
 template <class Point>
@@ -66,12 +65,12 @@ private:
     void _insert(KdTreeNode<Point> *node, Point point, int depth, int k);
     void _remove(KdTreeNode<Point> *node, Point point, int depth, int k);
     bool inRange(Point point, Point min, Point max);
-    void buildTree(std::vector<Point> &points, KdTreeNode<Point> *&node, int depth, int thread_no, bool right = true);
-    void _splitVector(std::vector<Point> &points, int depth, size_t sample_size, std::vector<Point> &leftPoints, std::vector<Point> &rightPoints);
+    void buildTree(std::vector<Point *> &points, KdTreeNode<Point> *&node, int depth, int thread_no, bool right = true);
+    void _splitVector(std::vector<Point *> &points, int depth, size_t sample_size, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints);
 
 public:
     KdTree();
-    KdTree(std::vector<Point> &points);
+    KdTree(std::vector<Point*> &points);
     ~KdTree();
     void insert(Point point);
     void remove(Point point);
@@ -88,7 +87,7 @@ KdTree<Point>::KdTree()
 }
 
 template <class Point>
-KdTree<Point>::KdTree(std::vector<Point> &points){
+KdTree<Point>::KdTree(std::vector<Point*> &points){
     this->root = nullptr;
 
     this->buildTree(points, this->root, 0, 0, true);
@@ -102,9 +101,9 @@ KdTree<Point>::KdTree(std::vector<Point> &points){
 }
 
 template <class Point>
-void KdTree<Point>::_splitVector(std::vector<Point> &points, int depth, size_t sample_size, std::vector<Point> &leftPoints, std::vector<Point> &rightPoints)
+void KdTree<Point>::_splitVector(std::vector<Point *> &points, int depth, size_t sample_size, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints)
 {
-    int axis = depth % points[0].dimensions();
+    int axis = depth % (*points[0]).dimensions();
 
     size_t size = points.size();
 
@@ -114,7 +113,7 @@ void KdTree<Point>::_splitVector(std::vector<Point> &points, int depth, size_t s
     }
 
     std::set<int> used_indices;
-    std::vector<Point> sample;
+    std::vector<Point *> sample;
 
     while (sample.size() < sample_size)
     {
@@ -132,15 +131,15 @@ void KdTree<Point>::_splitVector(std::vector<Point> &points, int depth, size_t s
         }
     }
 
-    std::sort(sample.begin(), sample.end(), [axis](Point a, Point b) {
-        return a[axis] < b[axis];
+    std::sort(sample.begin(), sample.end(), [axis](Point * a, Point *b) {
+        return (*a)[axis] < (*b)[axis];
     });
 
-    double median = sample[sample_size / 2][axis];
+    double median = (*sample[sample_size / 2])[axis];
 
     // Reorder the vector so that the elements before the median are smaller than the median and the elements after the median are greater than the median
-    typename std::vector<Point>::iterator median_iterator = std::partition(points.begin(), points.end(), [median, axis](Point a) {
-        return a[axis] <= median;
+    typename std::vector<Point*>::iterator median_iterator = std::partition(points.begin(), points.end(), [median, axis](Point * a) {
+        return (*a)[axis] <= median;
     });
 
     leftPoints.assign(points.begin(), median_iterator);
@@ -152,7 +151,7 @@ void KdTree<Point>::_splitVector(std::vector<Point> &points, int depth, size_t s
 }
 
 template <class Point>
-void KdTree<Point>::buildTree(std::vector<Point> &points, KdTreeNode<Point>* &node, int depth, int thread_no, bool right)
+void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &node, int depth, int thread_no, bool right)
 {    
     // Case: reached the leaf 
     if (points.size() == 1)
@@ -168,12 +167,12 @@ void KdTree<Point>::buildTree(std::vector<Point> &points, KdTreeNode<Point>* &no
     
     auto start = std::chrono::system_clock::now();
 
-    std::vector<Point> leftPoints;
-    std::vector<Point> rightPoints;
+    std::vector<Point*> leftPoints;
+    std::vector<Point*> rightPoints;
 
     this->_splitVector(points, depth, 1000, leftPoints, rightPoints);
 
-    Point median = leftPoints[leftPoints.size() - 1];
+    Point *median = leftPoints[leftPoints.size() - 1];
 
     leftPoints.pop_back();
 
