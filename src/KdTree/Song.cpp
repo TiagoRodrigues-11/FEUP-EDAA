@@ -75,3 +75,7 @@ double Song::operator[] (int i) {
             return 0;
     }
 }
+
+bool Song::operator== (Song song) {
+    return this->name == song.getName() && this->artist == song.getArtist();
+}

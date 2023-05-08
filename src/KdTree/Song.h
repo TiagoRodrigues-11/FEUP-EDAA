@@ -14,6 +14,7 @@ class Song {
         // All attributes except name and artist
         int dimensions();           
         double operator[] (int i);
+        bool operator== (Song song);
 
     private:
 
