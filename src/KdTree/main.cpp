@@ -10,7 +10,40 @@
 
 using namespace std;
 
+KdTree<Song> createKdTree(string minPopularity, string connString){
+    pqxx::connection c(connString);
+    
+    cout << "Starting with minimum song popularity " << minPopularity << endl;
 
+    pqxx::work tx(c);
+
+    char sql[1024] = {0};
+    
+    snprintf(sql, 1023, "SELECT name, artist_names, acousticness, danceability, energy, instrumentalness, liveness, loudness, speechiness, tempo, valence, time_signature, mode " 
+                      "FROM tracks_info "
+                      "WHERE popularity > %s ", minPopularity.c_str());
+
+    pqxx::result r = tx.exec(sql);
+
+    tx.commit();
+    
+    std::vector<Song *> songs = getVectorFromDbResults(r);
+
+    cout << "Building KdTree with " << songs.size() << " nodes..." << endl;
+
+    auto start = std::chrono::system_clock::now();
+
+    // Make a KdTree
+    KdTree<Song> tree = KdTree<Song>(songs);
+
+    auto end = std::chrono::system_clock::now();
+
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    
+    cout << "Finished in: " << elapsed_seconds.count() << "s" << endl;
+
+    return tree;
+}
 
 Song* selectSong(string minPopularity, string connString){
     pqxx::connection c(connString);
@@ -53,7 +86,6 @@ Song* selectSong(string minPopularity, string connString){
         if(choice == songs.size()) return nullptr;
         return songs[choice];
     }
-
 }
 
 int main(int argc, char* argv[]){
@@ -70,37 +102,7 @@ int main(int argc, char* argv[]){
     char connString[1024] = {0};
     snprintf(connString, 1023, "dbname=db user=postgres password=password hostaddr=%s port=5432", hostaddr.c_str());
 
-    printf("Connecting to database at %s\n", hostaddr.c_str());
-    pqxx::connection c(connString);
-    
-    printf("Starting with minimum song popularity %s\n", argv[1]);
-
-    pqxx::work tx(c);
-
-    char sql[1024] = {0};
-    
-    snprintf(sql, 1023, "SELECT name, artist_names, acousticness, danceability, energy, instrumentalness, liveness, loudness, speechiness, tempo, valence, time_signature, mode " 
-                      "FROM tracks_info "
-                      "WHERE popularity > %s ", argv[1]);
-
-    pqxx::result r = tx.exec(sql);
-
-    tx.commit();
-    
-    std::vector<Song *> songs = getVectorFromDbResults(r);
-
-    cout << "Building KdTree with " << songs.size() << " nodes..." << endl;
-
-    auto start = std::chrono::system_clock::now();
-
-    // Make a KdTree
-    KdTree<Song> tree = KdTree<Song>(songs);
-
-    auto end = std::chrono::system_clock::now();
-
-    std::chrono::duration<double> elapsed_seconds = end - start;
-    
-    cout << "Finished in: " << elapsed_seconds.count() << "s" << endl;
+    KdTree<Song> tree = createKdTree(argv[1], connString);
 
     int choice;
     cout << "What would you like to do?" << endl;
@@ -110,50 +112,61 @@ int main(int argc, char* argv[]){
     cout << "Option: ";
     cin >> choice;
 
-    if(choice == 1){
-        Song *selected = nullptr;
-        while(true){
-            selected = selectSong(argv[1], connString);
-            if(selected != nullptr){
-                cout << "Selected song: " << selected->getName() << endl;
-                break;
-            }
-        }
-
-        cout << "What would you like to do?" << endl;
-        cout << "1. Find similar songs." << endl;
-        cout << "2. Advanced search." << endl;
-        cout << "3. Choose another song." << endl;
-        cout << "4. Exit." << endl;
-        cout << "Option: ";
-        cin >> choice;
-
+    bool exit = false;
+    while(!exit){
         if(choice == 1){
-            std::priority_queue<Song *, std::vector<Song *>, ComparePointsClosestFirst<Song>> neighbour = tree.kNearestNeighborSearch(tree.getRoot(), selected, 10);
-            cout << "Finished searching for nearest neighbours" << endl << endl;
-            
-            printSong(selected);
+            bool choice1 = true;
+            while(choice1){
+                Song *selected = nullptr;
+                while(true){
+                    selected = selectSong(argv[1], connString);
+                    if(selected != nullptr){
+                        cout << "Selected song: " << selected->getName() << endl;
+                        break;
+                    }
+                }
 
-            while(!neighbour.empty()) {
-                getDistance(selected, neighbour.top());
-                printSong(neighbour.top());
-                neighbour.pop();
+                cout << "What would you like to do?" << endl;
+                cout << "1. Find similar songs." << endl;
+                cout << "2. Advanced search." << endl;
+                cout << "3. Choose another song." << endl;
+                cout << "4. Exit." << endl;
+                cout << "Option: ";
+                cin >> choice;
+
+                if(choice == 1){
+                    std::priority_queue<Song *, std::vector<Song *>, ComparePointsClosestFirst<Song>> neighbour = tree.kNearestNeighborSearch(tree.getRoot(), selected, 10);
+                    cout << "Finished searching for nearest neighbours" << endl << endl;
+                    
+                    printSong(selected);
+
+                    while(!neighbour.empty()) {
+                        getDistance(selected, neighbour.top());
+                        printSong(neighbour.top());
+                        neighbour.pop();
+                    }
+
+                    choice1 = false;
+                    exit = true;
+                } else if (choice == 2) {
+                    //Advanced search with starting parameters as the selected song
+
+                } else if (choice == 3) {
+                    continue;
+                } else if (choice == 4) {
+                    choice1 = false;
+                    exit = true;
+                }
             }
         } else if (choice == 2) {
-            //Advanced search with starting parameters as the selected song
+            //Advanced search
 
         } else if (choice == 3) {
-            //Restart with the first choice as 1
-
-        } else if (choice == 4) {
-            return 0;
+            exit = true;
         }
-    } else if (choice == 2) {
-        //Advanced search
-
-    } else if (choice == 3) {
-        return 0;
     }
+
+    
 }
 
 
