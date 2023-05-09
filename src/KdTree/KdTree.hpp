@@ -363,15 +363,32 @@ void KdTree<Point>::print(KdTreeNode<Point> *node, int depth)
 template <class Point>
 KdTreeNode<Point> * KdTree<Point>::_traverseTreeToLeaf(KdTreeNode<Point> *node, Point * point, int depth) {
     int axis = depth % point->dimensions();
+    // If the point is lesser than or equal to the current node, go left
     if ((*point)[axis] <= (*(node->point))[axis]) {
+        // If the left node is null
         if (node->left == nullptr) {
+            // If the right node is not null, go right
+            if (node->right != nullptr) {
+                return _traverseTreeToLeaf(node->right, point, depth + 1);
+            }
+            // If the right node is null, return the current node (leaf)
             return node;
         }
+        // If the left node is not null, go left
         return _traverseTreeToLeaf(node->left, point, depth + 1);
-    } else {
+    }
+    // If the point is greater than the current node, go right
+    else {
+        // If the right node is null
         if (node->right == nullptr) {
+            // If the left node is not null, go left
+            if (node->left != nullptr) {
+                return _traverseTreeToLeaf(node->left, point, depth + 1);
+            }
+            // If the left node is null, return the current node (leaf) 
             return node;
         }
+        // If the right node is not null, go right
         return _traverseTreeToLeaf(node->right, point, depth + 1);
     }
 }
