@@ -43,6 +43,16 @@ void getDistance(Song *song1, Song *song2) {
     std::cout << "Distance between " << song1->getName() << " and " << song2->getName() << ": " << distance(*song1, *song2) << std::endl;
 }
 
+std::vector<Song *> getVectorFromDbResults(pqxx::result r) {
+    std::vector<Song *> songs;
+    for (pqxx::result::const_iterator c = r.begin(); c != r.end(); ++c) {
+        Song *song = new Song(c[0].as<std::string>(), c[1].as<std::string>(), c[2].as<float>(), c[3].as<float>(), c[4].as<float>(), c[5].as<float>(), c[6].as<float>(), c[7].as<float>(), c[8].as<float>(), c[9].as<float>(), c[10].as<float>(), c[11].as<float>(), c[12].as<float>());
+        songs.push_back(song);
+    }
+    songs.shrink_to_fit();
+    return songs;
+}
+
 
 string getEnvVariableFromFile(string envPath, string variableName) {
     ifstream envFile(envPath);
@@ -53,6 +63,50 @@ string getEnvVariableFromFile(string envPath, string variableName) {
         }
     }
     return "";
+}
+
+Song* selectSong(string minPopularity, string connString){
+    pqxx::connection c(connString);
+    
+    string name;
+
+    cout << "Please enter the name of the song you would like to search for: " << endl;
+    cout << "Name: ";
+    cin >> name;
+
+    char sql[1024] = {0};
+    snprintf(sql, 1023, "SELECT name, artist_names, acousticness, danceability, energy, instrumentalness, liveness, loudness, speechiness, tempo, valence, time_signature, mode " 
+                      "FROM tracks_info "
+                      "WHERE popularity > %s AND name ILIKE '%s'", minPopularity.c_str(), name.c_str());
+
+    pqxx::work tx(c);
+
+    pqxx::result r = tx.exec(sql);
+
+    tx.commit();
+
+    std::vector<Song *> songs = getVectorFromDbResults(r);
+
+    if (songs.size() == 0) {
+        cout << "No songs found with that name" << endl;
+        return nullptr;
+    } else if (songs.size() == 1) {
+        cout << "Found song: " << endl;
+        cout << songs[0]->getName() << " - " << songs[0]->getArtist() << endl;
+        return songs[0];
+    } else {
+        cout << "Found " << songs.size() << " songs with that name, please select one: " << endl;
+        for (int i = 0; i < songs.size(); i++) {
+            cout << i << ". " << songs[i]->getName() << " - " << songs[i]->getArtist() << endl;
+        }
+        cout << songs.size() << ". None of the above, try again." << endl;
+        cout << "Option: ";
+        int choice;
+        cin >> choice;
+        if(choice == songs.size()) return nullptr;
+        return songs[choice];
+    }
+
 }
 
 int main(int argc, char* argv[]){
@@ -78,37 +132,15 @@ int main(int argc, char* argv[]){
 
     char sql[1024] = {0};
     
-    // TODO: Change this to a query that only selects songs with a popularity above a certain threshold using new table
-    snprintf(sql, 1023, "SELECT tracks.name, artists.name, acousticness, danceability, energy, instrumentalness, liveness, loudness, speechiness, tempo, valence, time_signature, mode " 
-                      "FROM audio_features "
-                      "INNER JOIN tracks ON audio_features.id = tracks.audio_feature_id "
-                      "INNER JOIN r_track_artist ON tracks.id = r_track_artist.track_id "
-                      "INNER JOIN artists ON r_track_artist.artist_id = artists.id "
-                      "LIMIT %s", argv[1]);
+    snprintf(sql, 1023, "SELECT name, artist_names, acousticness, danceability, energy, instrumentalness, liveness, loudness, speechiness, tempo, valence, time_signature, mode " 
+                      "FROM tracks_info "
+                      "WHERE popularity > %s ", argv[1]);
 
     pqxx::result r = tx.exec(sql);
 
     tx.commit();
     
-    std::vector<Song *> songs;
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(0, 1);
-
-
-    
-    for (pqxx::result::const_iterator c = r.begin(); c != r.end(); ++c) {
-        Song *song = new Song(c[0].as<std::string>(), c[1].as<std::string>(), c[2].as<float>(), c[3].as<float>(), c[4].as<float>(), c[5].as<float>(), c[6].as<float>(), c[7].as<float>(), c[8].as<float>(), c[9].as<float>(), c[10].as<float>(), c[11].as<float>(), c[12].as<float>());
-        songs.push_back(song);
-        //cout << c[0].as<string>() << endl << c[1].as<string>() << endl << c[2].as<string>() << endl;
-    }
-
-
-    songs.shrink_to_fit();
-    /* // Print the songs
-    for (size_t i = 0; i < songs.size(); i++) {
-        std::cout << songs[i].getName() << " " << songs[i].getArtist() << " " << songs[i][0] << " " << songs[i][1] << " " << songs[i][2] << " " << songs[i][3] << " " << songs[i][4] << " " << songs[i][5] << " " << songs[i][6] << " " << songs[i][7] << " " << songs[i][8] << " " << songs[i][9] << " " << songs[i][10] << " " << songs[i][11] << std::endl;
-    } */
+    std::vector<Song *> songs = getVectorFromDbResults(r);
 
     cout << "Building KdTree with " << songs.size() << " nodes..." << endl;
 
@@ -123,18 +155,58 @@ int main(int argc, char* argv[]){
     
     cout << "Finished in: " << elapsed_seconds.count() << "s" << endl;
 
-    std::priority_queue<Song *, std::vector<Song *>, ComparePointsClosestFirst<Song>> neighbour = tree.kNearestNeighborSearch(tree.getRoot(), songs[0], 10);
-    cout << "Finished searching for nearest neighbours" << endl << endl;
-    
-    // Print songs[0]
-    printSong(songs[0]);
+    int choice;
+    cout << "What would you like to do?" << endl;
+    cout << "1. Select a song" << endl;
+    cout << "2. Advanced search" << endl;
+    cout << "3. Exit" << endl;
+    cout << "Option: ";
+    cin >> choice;
 
-    while(!neighbour.empty()) {
-        printSong(neighbour.top());
-        getDistance(songs[0], neighbour.top());
-        neighbour.pop();
+    if(choice == 1){
+        Song *selected = nullptr;
+        while(true){
+            selected = selectSong(argv[1], connString);
+            if(selected != nullptr){
+                cout << "Selected song: " << selected->getName() << endl;
+                break;
+            }
+        }
+
+        cout << "What would you like to do?" << endl;
+        cout << "1. Find similar songs." << endl;
+        cout << "2. Advanced search." << endl;
+        cout << "3. Choose another song." << endl;
+        cout << "4. Exit." << endl;
+        cout << "Option: ";
+        cin >> choice;
+
+        if(choice == 1){
+            std::priority_queue<Song *, std::vector<Song *>, ComparePointsClosestFirst<Song>> neighbour = tree.kNearestNeighborSearch(tree.getRoot(), selected, 10);
+            cout << "Finished searching for nearest neighbours" << endl << endl;
+            
+            printSong(selected);
+
+            while(!neighbour.empty()) {
+                getDistance(selected, neighbour.top());
+                printSong(neighbour.top());
+                neighbour.pop();
+            }
+        } else if (choice == 2) {
+            //Advanced search with starting parameters as the selected song
+
+        } else if (choice == 3) {
+            //Restart with the first choice as 1
+
+        } else if (choice == 4) {
+            return 0;
+        }
+    } else if (choice == 2) {
+        //Advanced search
+
+    } else if (choice == 3) {
+        return 0;
     }
-
 }
 
 
