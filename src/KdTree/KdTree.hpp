@@ -10,6 +10,8 @@
 #include <string>
 #include <limits>
 #include <queue>
+#include <utility>
+#include <cmath>
 
 #define MAX_THREADS std::thread::hardware_concurrency() - 1
 
@@ -17,7 +19,6 @@ std::atomic<unsigned int> num_threads_atomic(0);
 
 double sort_time[16] = {0};
 
-// TODO check pointers
 template <class Point>
 class ComparePointsClosestFirst {
     Point * point;
@@ -52,9 +53,50 @@ double distance(Point point1, Point point2)
     double sum = 0;
     for (int i = 0; i < point1.dimensions(); i++)
     {
-        sum += pow(point1[i] - point2[i], 2);
+        if (i == 3) { // instrumentalness
+            if ((point1[i] < 0.5 && point2[i] < 0.5) || (point1[i] > 0.5 && point2[i] > 0.5)) { //same category
+                sum += pow(point1[i] - point2[i], 2);
+            } else { //different category
+                sum += pow(point1[i] - point2[i], 2) * 1.5;
+            }
+        }   
+        else if(i == 4) { //liveness - values above 0.8 means it was most likely performed live
+            if((point1[i] > 0.8 && point2[i] > 0.8) || (point1[i] < 0.8 && point2[i] < 0.8)){ //same category
+                sum += pow(point1[i] - point2[i], 2);
+            } else { //different category
+                sum += pow(point1[i] - point2[i], 2) * 1.5;
+            }
+        } else if (i == 5) { //loudness
+            sum += pow(point1[i]/60 - point2[i]/60, 2);
+        }
+        else if (i == 6) { //speechiness
+            // values below 0.33 are intrumentals, between 0.33 and 0.66 are mixed, and above 0.66 are pure speech
+            // increase distance if they are not in the same category
+            if ((point1[i] < 0.33 && point2[i] < 0.33) || (point1[i] > 0.66 && point2[i] > 0.66) || (point1[i] > 0.33 && point1[i] < 0.66 && point2[i] > 0.33 && point2[i] < 0.66)) {
+                sum += pow(point1[i] - point2[i], 2);
+            } else {
+                sum += pow(point1[i] - point2[i], 2) * 1.5;
+            }
+        }        
+        else if (i == 7) { //tempo
+            sum += pow(point1[i]/250 - point2[i]/250, 2);
+        } else if (i == 9) { //time signature
+            sum += pow(point1[i]/5 - point2[i]/5, 2);
+        } else if (i = 10) { //mode
+            sum *= point1[i] == point2[i] ? 1 : 1.5; // if same mode, multiply by 1, else multiply by 1.5 (change weights later)
+        }
+        else {
+            sum += pow(point1[i] - point2[i], 2);
+        }
     }
     return sqrt(sum);
+}
+
+template <class Point>
+Point copyPointWithDimension(Point point, int dimension, double value) {
+    Point new_point = point;
+    new_point.setDimension(dimension, value);
+    return new_point;
 }
 
 template <class Point>
@@ -111,7 +153,7 @@ private:
     bool inRange(Point point, Point min, Point max);
     void buildTree(std::vector<Point *> &points, KdTreeNode<Point> *&node, int depth, int thread_no, KdTreeNode<Point> *parent, bool right = true);
     void _splitVector(std::vector<Point *> &points, int depth, size_t sample_size, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints);
-    KdTreeNode<Point> * _traverseTreeToLeaf(KdTreeNode<Point> *node, Point *point, int depth = 0);
+    std::pair<KdTreeNode<Point> *, int> _traverseTreeToLeaf(KdTreeNode<Point> *node, Point *point, int depth = 0);
 public:
     KdTree();
     KdTree(std::vector<Point*> &points);
@@ -120,7 +162,7 @@ public:
     void remove(Point point);
     void print(KdTreeNode<Point> *node, int depth);
     void rangeSearch(Point point, Point min, Point max, int depth, std::vector<Point> &points);
-    std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Point>> kNearestNeighborSearch(KdTreeNode<Point> *node, Point *query, int k = 1, KdTreeNode<Point> * cutoff = nullptr);
+    std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Point>> kNearestNeighborSearch(KdTreeNode<Point> *node, Point *query, int k = 1, KdTreeNode<Point> * cutoff = nullptr, int depth = 0);
     KdTreeNode<Point> *getRoot() { return root;}
 };
 
@@ -361,7 +403,7 @@ void KdTree<Point>::print(KdTreeNode<Point> *node, int depth)
 }
 
 template <class Point>
-KdTreeNode<Point> * KdTree<Point>::_traverseTreeToLeaf(KdTreeNode<Point> *node, Point * point, int depth) {
+std::pair<KdTreeNode<Point> *, int> KdTree<Point>::_traverseTreeToLeaf(KdTreeNode<Point> *node, Point * point, int depth) {
     int axis = depth % point->dimensions();
     // If the point is lesser than or equal to the current node, go left
     if ((*point)[axis] <= (*(node->point))[axis]) {
@@ -372,7 +414,7 @@ KdTreeNode<Point> * KdTree<Point>::_traverseTreeToLeaf(KdTreeNode<Point> *node, 
                 return _traverseTreeToLeaf(node->right, point, depth + 1);
             }
             // If the right node is null, return the current node (leaf)
-            return node;
+            return std::pair(node, depth);
         }
         // If the left node is not null, go left
         return _traverseTreeToLeaf(node->left, point, depth + 1);
@@ -386,7 +428,7 @@ KdTreeNode<Point> * KdTree<Point>::_traverseTreeToLeaf(KdTreeNode<Point> *node, 
                 return _traverseTreeToLeaf(node->left, point, depth + 1);
             }
             // If the left node is null, return the current node (leaf) 
-            return node;
+            return std::pair(node, depth);
         }
         // If the right node is not null, go right
         return _traverseTreeToLeaf(node->right, point, depth + 1);
@@ -397,14 +439,15 @@ KdTreeNode<Point> * KdTree<Point>::_traverseTreeToLeaf(KdTreeNode<Point> *node, 
  * @brief kNearestNeighborSearch - returns the k nearest neighbors of a query point
  * @param node - the root of the tree
  * @param query - the query point
- * @param depth - the depth of the current node
- * @param best_dist - the distance of the current best point
  * @param k - the number of nearest neighbors to return
+ * @param cutoff - the node to stop searching at
 */
 template <class Point>
-std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Point>> KdTree<Point>::kNearestNeighborSearch(KdTreeNode<Point> *node, Point * query, int k, KdTreeNode<Point> * cutoff)
+std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Point>> KdTree<Point>::kNearestNeighborSearch(KdTreeNode<Point> *node, Point * query, int k, KdTreeNode<Point> * cutoff, int depth)
 {
-    KdTreeNode<Point> *leaf = _traverseTreeToLeaf(node, query);
+    std::pair<KdTreeNode<Point> *, int> leaf_depth_pair = _traverseTreeToLeaf(node, query, depth);
+    KdTreeNode<Point> * leaf = leaf_depth_pair.first;
+    int current_depth = leaf_depth_pair.second;
 
     std::priority_queue<Point *, std::vector<Point *>, ComparePointsFarthestFirst<Point>> queue{ComparePointsFarthestFirst<Point>(query)};
     KdTreeNode<Point> *current = leaf, *previous = nullptr;
@@ -422,14 +465,21 @@ std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Poi
         // Check other branch
         KdTreeNode<Point> *other_child = current->left == previous ? current->right : current->left;
 
+        current_depth--;
+        
         if (other_child == nullptr) {
             continue;
         }
-
+        
+        int new_dim = current_depth % query->dimensions();
+        
         // Check if there can be a closer point in other branch
         // TODO: check if condition is correct
-        if (distance(*query, *(other_child->point)) < distance(*query, *(queue.top()))) {
-            std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Point>> other_points = kNearestNeighborSearch(other_child, query, k, current);
+        // distance(*query, *(other_child->point)) < distance(*query, *(queue.top()))
+        
+        //verificar se o hyperplane que o novo nó está pode ter um ponto mais próximo que o ponto mais distante da fila
+        if (distance((*query), copyPointWithDimension(*query, new_dim, (*(current->point))[new_dim])) < distance((*query), (*queue.top()))) {
+            std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Point>> other_points = kNearestNeighborSearch(other_child, query, k, current, current_depth + 1);
 
             while (!other_points.empty()) {
                 Point *point = other_points.top();
