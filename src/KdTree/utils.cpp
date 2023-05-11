@@ -1,5 +1,8 @@
 #include "utils.h"
 
+/**
+ * @brief Prints a song to the console
+*/
 void printSong(Song *song) {
     // Name - Author
     std::cout << song->getName() << " - " << song->getArtist() << std::endl;
@@ -18,6 +21,9 @@ void printSong(Song *song) {
     std::cout << std::endl;
 }
 
+/**
+ * @brief Calculate the distance between two points
+*/
 double distance(Song point1, Song point2)
 {
     double sum = 0;
@@ -28,10 +34,16 @@ double distance(Song point1, Song point2)
     return sqrt(sum);
 }
 
+/**
+ * @brief Calculate and print the distance between two songs
+*/
 void getDistance(Song *song1, Song *song2) {
     std::cout << "Distance between " << song1->getName() << " and " << song2->getName() << ": " << distance(*song1, *song2) << std::endl;
 }
 
+/**
+ * @brief Get the Environment Variable From File object
+*/
 string getEnvVariableFromFile(string envPath, string variableName) {
     ifstream envFile(envPath);
     string line;
@@ -43,6 +55,10 @@ string getEnvVariableFromFile(string envPath, string variableName) {
     return "";
 }
 
+
+/**
+ * @brief Create a vector containing songs from the database results
+*/
 std::vector<Song *> getVectorFromDbResults(pqxx::result r) {
     std::vector<Song *> songs;
     for (pqxx::result::const_iterator c = r.begin(); c != r.end(); ++c) {

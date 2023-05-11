@@ -76,6 +76,46 @@ double Song::operator[] (int i) {
     }
 }
 
+void Song::setDimension(int dimension, double value) {
+    switch (dimension) {
+        case 0:
+            this->acousticness = value;
+            break;
+        case 1:
+            this->danceability = value;
+            break;
+        case 2:
+            this->energy = value;
+            break;
+        case 3: 
+            this->instrumentalness = value;
+            break;
+        case 4:
+            this->liveness = value;
+            break;
+        case 5:
+            this->loudness = value;
+            break;
+        case 6:
+            this->speechiness = value;
+            break;
+        case 7:
+            this->tempo = value;
+            break;
+        case 8:
+            this->valence = value;
+            break;
+        case 9:
+            this->time_signature = value;
+            break;
+        case 10:
+            this->mode = value;
+            break;
+        default:
+            return;
+    }
+}
+
 bool Song::operator== (Song song) {
     return this->name == song.getName() && this->artist == song.getArtist();
 }
