@@ -3,7 +3,7 @@ version: '3'
 services:
   db:
     image: dreflo/spotify-postgres-db:latest
-    shm_size: 1gb
+    shm_size: 50gb
     container_name: postgres
     environment:
       POSTGRES_USER: postgres
