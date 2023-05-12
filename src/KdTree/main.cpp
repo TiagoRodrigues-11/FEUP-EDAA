@@ -5,6 +5,7 @@
 #include <random>
 #include <chrono>
 #include <queue>
+#include <limits>
 #include <pqxx/pqxx>
 #include "utils.h"
 
@@ -159,8 +160,30 @@ int main(int argc, char* argv[]){
                 }
             }
         } else if (choice == 2) {
-            //Advanced search
+            Song min = Song();
+            Song max = Song();
+            for (int i = 0; i < min.dimensions(); i++) {
+                double minValue, maxValue;
+                cout << "Please enter the minimum value for " << min.getDimensionName(i) << ": ";
+                cin >> minValue;
+                cout << "Please enter the maximum value for " << min.getDimensionName(i) << ": ";
+                cin >> maxValue;
+                min.setDimension(i, minValue);
+                max.setDimension(i, maxValue);
+            }
+            
+            std::map<int, std::pair<double, double>> kdTreeRanges;
+            for(int i = 0; i < min.dimensions(); i++){
+                kdTreeRanges[i] = std::pair<double, double>(std::numeric_limits<double>::min(), std::numeric_limits<double>::max());
+            }
+            std::vector<Song*> points = tree.rangeSearch(tree.getRoot(), &min, &max, kdTreeRanges, 0);
 
+            cout << "Found " << points.size() << " songs matching your search" << endl;
+            for(int i = 0; i < points.size(); i++){
+                printSong(points[i]);
+            }
+
+            return 0;
         } else if (choice == 3) {
             exit = true;
         }

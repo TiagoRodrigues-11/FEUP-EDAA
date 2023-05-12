@@ -12,6 +12,7 @@
 #include <queue>
 #include <utility>
 #include <cmath>
+#include <map>
 
 #define MAX_THREADS std::thread::hardware_concurrency() - 1
 
@@ -114,6 +115,7 @@ private:
 public:
     KdTreeNode(Point *point, KdTreeNode<Point> *parent = nullptr);
     ~KdTreeNode();
+    Point getPoint() { return *point; }
 
     void print();
 
@@ -150,10 +152,13 @@ private:
     KdTreeNode<Point> *root;
     void _insert(KdTreeNode<Point> *node, Point point, int depth, int k);
     void _remove(KdTreeNode<Point> *node, Point point, int depth, int k);
-    bool inRange(Point point, Point min, Point max);
+    bool inRange(Point *point, Point *min, Point *max);
     void buildTree(std::vector<Point *> &points, KdTreeNode<Point> *&node, int depth, int thread_no, KdTreeNode<Point> *parent, bool right = true);
     void _splitVector(std::vector<Point *> &points, int depth, size_t sample_size, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints);
+    std::vector<Point*> reportSubtree(KdTreeNode<Point> *node);
     std::pair<KdTreeNode<Point> *, int> _traverseTreeToLeaf(KdTreeNode<Point> *node, Point *point, int depth = 0);
+    bool subregionContained(Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange);
+    bool subregionIntersects(Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange);
 public:
     KdTree();
     KdTree(std::vector<Point*> &points);
@@ -161,7 +166,7 @@ public:
     void insert(Point point);
     void remove(Point point);
     void print(KdTreeNode<Point> *node, int depth);
-    void rangeSearch(Point point, Point min, Point max, int depth, std::vector<Point> &points);
+    std::vector<Point*> rangeSearch(KdTreeNode<Point> *node, Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange, int depth = 0);
     std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Point>> kNearestNeighborSearch(KdTreeNode<Point> *node, Point *query, int k = 1, KdTreeNode<Point> * cutoff = nullptr, int depth = 0);
     KdTreeNode<Point> *getRoot() { return root;}
 };
@@ -313,11 +318,11 @@ KdTree<Point>::~KdTree()
 
 // TODO: make operator < for Point class
 template <class Point>
-bool KdTree<Point>::inRange(Point point, Point min, Point max)
+bool KdTree<Point>::inRange(Point *point, Point *min, Point *max)
 {
-    for (int i = 0; i < point.dimensions(); i++)
+    for (int i = 0; i < point->dimensions(); i++)
     {
-        if (point[i] < min[i] || point[i] > max[i])
+        if ((*point)[i] < (*min)[i] || (*point)[i] > (*max)[i])
         {
             return false;
         }
@@ -361,29 +366,92 @@ void KdTree<Point>::_insert(KdTreeNode<Point> *node, Point point, int depth, int
 }
 
 template <class Point>
-void KdTree<Point>::rangeSearch(Point point, Point min, Point max, int depth, std::vector<Point> &points)
-{
-    if (this->root == nullptr)
-    {
-        return;
+std::vector<Point*> KdTree<Point>::reportSubtree(KdTreeNode<Point> *node) {
+    std::vector<Point*> points;
+    points.push_back(node->point);
+    if (node->left != nullptr) {
+        std::vector<Point*> leftPoints = reportSubtree(node->left);
+        points.insert(points.end(), leftPoints.begin(), leftPoints.end());
+    }
+    if (node->right != nullptr) {
+        std::vector<Point*> rightPoints = reportSubtree(node->right);
+        points.insert(points.end(), rightPoints.begin(), rightPoints.end());
+    }
+    return points;
+}
+
+template <class Point>
+bool KdTree<Point>::subregionContained(Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange) {
+    for (int i = 0; i < min->dimensions(); i++) {
+        std::pair<double, double> dimensionRange = kdTreeRange[i];
+
+        if ((*min)[i] > dimensionRange.first) {
+            return false;
+        }
+
+        if ((*max)[i] < dimensionRange.second) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template <class Point>
+bool KdTree<Point>::subregionIntersects(Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange) {
+    for (int i = 0; i < min->dimensions(); i++) {
+        std::pair<double, double> dimensionRange = kdTreeRange[i];
+
+        if (dimensionRange.first >= (*min)[i]) {
+            return true;
+        }
+
+        if (dimensionRange.second <= (*max)[i]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+template <class Point>
+std::vector<Point*> KdTree<Point>::rangeSearch(KdTreeNode<Point> *node, Point* min, Point* max, std::map<int, std::pair<double, double>> kdTreeRange, int depth)
+{   
+    std::vector<Point*> points;
+
+    if(inRange(node->point, min, max)){
+        points.push_back(node->point);
     }
 
-    // Check if current node is in range
-    if (inRange(point, min, max))
-    {
-        points.push_back(point);
+    int axis = depth % (node->point)->dimensions();
+
+    if (node->left != nullptr) {
+        std::map<int, std::pair<double, double>> leftKdTreeRange(kdTreeRange);
+        leftKdTreeRange[axis].second = (*(node->point))[axis];
+
+        if (subregionContained(min, max, leftKdTreeRange)) {
+            std::vector<Point*> leftPoints = reportSubtree(node->left);
+            points.insert(points.end(), leftPoints.begin(), leftPoints.end());
+        }
+        else if (subregionIntersects(min, max, leftKdTreeRange)) {
+            std::vector<Point*> leftPoints = rangeSearch(node->left, min, max, leftKdTreeRange, depth + 1);
+            points.insert(points.end(), leftPoints.begin(), leftPoints.end());
+        }
     }
 
-    // Check whether the left or right subtree is in range
-    int axis = depth % point.dimensions();
-    if (min[axis] <= point[axis])
-    {
-        this->rangeSearch(point->left, min, max, depth + 1, points);
+    if (node->right != nullptr) {
+        std::map<int, std::pair<double, double>> rightKdTreeRange(kdTreeRange);
+        rightKdTreeRange[axis].first = (*(node->point))[axis];
+
+        if (subregionContained(min, max, rightKdTreeRange)) {
+            std::vector<Point*> rightPoints = reportSubtree(node->right);
+            points.insert(points.end(), rightPoints.begin(), rightPoints.end());
+        }
+        else if (subregionIntersects(min, max, rightKdTreeRange)) {
+            std::vector<Point*> rightPoints = rangeSearch(node->right, min, max, rightKdTreeRange, depth + 1);
+            points.insert(points.end(), rightPoints.begin(), rightPoints.end());
+        }
     }
-    if (max[axis] >= point[axis])
-    {
-        this->rangeSearch(point->right, min, max, depth + 1, points);
-    }
+
+    return points;
 }
 
 template <class Point>

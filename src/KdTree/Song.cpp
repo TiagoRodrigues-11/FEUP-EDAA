@@ -119,3 +119,32 @@ void Song::setDimension(int dimension, double value) {
 bool Song::operator== (Song song) {
     return this->name == song.getName() && this->artist == song.getArtist();
 }
+
+std::string Song::getDimensionName(int i) {
+    switch (i) {
+        case 0:
+            return "acousticness";
+        case 1:
+            return "danceability";
+        case 2:
+            return "energy";
+        case 3:
+            return "instrumentalness";
+        case 4:
+            return "liveness";
+        case 5:
+            return "loudness";
+        case 6:
+            return "speechiness";
+        case 7:
+            return "tempo";
+        case 8:
+            return "valence";
+        case 9:
+            return "time_signature";
+        case 10:
+            return "mode";
+        default:
+            return "";
+    }
+}

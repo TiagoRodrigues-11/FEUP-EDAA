@@ -17,6 +17,7 @@ class Song {
         double operator[] (int i);
         bool operator== (Song song);
         void setDimension(int dimension, double value);
+        std::string getDimensionName(int dimension);
 
     private:
 
