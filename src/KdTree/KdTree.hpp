@@ -278,6 +278,7 @@ void KdTree<Point>::_splitVector(std::vector<Point *> &points, int depth, size_t
         rightPoints.assign(median_iterator, points.end());
 }
 
+// TODO dafuq is right for?
 /**
  * @brief Build the tree
  * @param points The points to build the tree from
