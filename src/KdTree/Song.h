@@ -11,7 +11,7 @@ class Song {
         virtual std::string getArtist() = 0;
 
         // All attributes except name and artist
-        virtual int dimensions() = 0;
+        virtual size_t dimensions() = 0;
                   
         virtual double operator[] (int i) = 0;
         //virtual bool operator== (Song song) = 0;
@@ -28,7 +28,7 @@ class FullTrack : public Song {
         std::string getArtist();
 
         // All attributes except name and artist
-        int dimensions();
+        size_t dimensions();
                   
         double operator[] (int i);
         bool operator== (FullTrack song);
@@ -56,11 +56,12 @@ class PartialTrack : public Song {
     public:
         PartialTrack();
         PartialTrack(std::string name, std::string artist, std::map<std::string, double> attributes);
+        ~PartialTrack();
         std::string getName();
         std::string getArtist();
 
         // All attributes except name and artist
-        int dimensions();
+        size_t dimensions();
                   
         double operator[] (int i);
         bool operator== (PartialTrack song);

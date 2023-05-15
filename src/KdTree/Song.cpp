@@ -32,9 +32,7 @@ FullTrack::FullTrack(std::string name, std::string artist, double acousticness, 
     this->mode = mode;
 }
 
-FullTrack::~FullTrack()
-{
-}
+FullTrack::~FullTrack(){}
 
 std::string FullTrack::getName() {
     return this->name;
@@ -44,7 +42,7 @@ std::string FullTrack::getArtist() {
     return this->artist;
 }
 
-int FullTrack::dimensions() {
+size_t FullTrack::dimensions() {
     return 11;
 }
 
@@ -162,6 +160,8 @@ PartialTrack::PartialTrack(std::string name, std::string artist, std::map<std::s
     this->attributes = attributes;
 }
 
+PartialTrack::~PartialTrack(){}
+
 std::string PartialTrack::getName(){
     return this->name;
 }
@@ -170,7 +170,7 @@ std::string PartialTrack::getArtist(){
     return this->artist;
 }
 
-int PartialTrack::dimensions(){
+size_t PartialTrack::dimensions(){
     return this->attributes.size();
 }
 

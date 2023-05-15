@@ -144,8 +144,7 @@ void useFullTrackKdTree(string minPopularity, string connString){
     bool exit = false;
     while(!exit){
         if(choice == 1){
-            bool choice1 = true;
-            while(choice1){
+            while(true){
                 FullTrack *selected = nullptr;
                 while(true){
                     selected = selectSong(minPopularity, connString);
@@ -174,13 +173,13 @@ void useFullTrackKdTree(string minPopularity, string connString){
                         neighbour.pop();
                     }
 
-                    choice1 = false;
                     exit = true;
+                    break;
                 } else if (choice == 2) {
                     continue;
                 } else if (choice == 3) {
-                    choice1 = false;
                     exit = true;
+                    break;
                 }
             }
         } else if (choice == 2) {
@@ -286,8 +285,7 @@ void usePartialTrackKdTree(string minPopularity, string connString){
     bool exit = false;
     while(!exit){
         if(choice == 1){
-            bool choice1 = true;
-            while(choice1){
+            while(true){
                 PartialTrack *selected = nullptr;
                 while(true){
                     selected = selectSong(minPopularity, connString, attributes);
@@ -316,13 +314,13 @@ void usePartialTrackKdTree(string minPopularity, string connString){
                         neighbour.pop();
                     }
 
-                    choice1 = false;
                     exit = true;
+                    break;
                 } else if (choice == 2) {
                     continue;
                 } else if (choice == 3) {
-                    choice1 = false;
                     exit = true;
+                    break;
                 }
             }
         } else if (choice == 2) {

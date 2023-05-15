@@ -8,7 +8,7 @@ void printSong(Song *song) {
     std::cout << song->getName() << " - " << song->getArtist() << std::endl;
     // Other attributes
 
-    for(int i = 0; i < song->dimensions(); i++){
+    for(int i = 0; i < (int)(song->dimensions()); i++){
         std::cout << song->getDimensionName(i) << ": " << (*song)[i] << std::endl;
     }
 
@@ -31,7 +31,7 @@ void printSong(Song *song) {
 double distance(Song &point1, Song &point2)
 {
     double sum = 0;
-    for (int i = 0; i < point1.dimensions(); i++)
+    for (int i = 0; i < (int)(point1.dimensions()); i++)
     {
         // All this values come from the API 
         switch (i) {
