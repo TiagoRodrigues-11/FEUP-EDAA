@@ -175,7 +175,7 @@ private:
     void _insert(KdTreeNode<Point> *node, Point point, int depth, int k);
     void _remove(KdTreeNode<Point> *node, Point point, int depth, int k);
     bool inRange(Point *point, Point *min, Point *max);
-    void buildTree(std::vector<Point *> &points, KdTreeNode<Point> *&node, int depth, int thread_no, KdTreeNode<Point> *parent, bool right = true);
+    void buildTree(std::vector<Point *> &points, KdTreeNode<Point> *&node, int depth, int thread_no, KdTreeNode<Point> *parent);
     void _splitVector(std::vector<Point *> &points, int depth, size_t sample_size, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints);
     std::vector<Point*> reportSubtree(KdTreeNode<Point> *node);
     std::pair<KdTreeNode<Point> *, int> _traverseTreeToLeaf(KdTreeNode<Point> *node, Point *point, int depth = 0);
@@ -189,7 +189,7 @@ public:
     void remove(Point point);
     void print(KdTreeNode<Point> *node, int depth);
     std::vector<Point*> rangeSearch(KdTreeNode<Point> *node, Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange, int depth = 0);
-    std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Point>> kNearestNeighborSearch(KdTreeNode<Point> *node, Point *query, int k = 1, KdTreeNode<Point> * cutoff = nullptr, int depth = 0);
+    std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Point>> kNearestNeighborSearch(KdTreeNode<Point> *node, Point *query, size_t k = 1, KdTreeNode<Point> * cutoff = nullptr, int depth = 0);
     KdTreeNode<Point> *getRoot() { return root;}
 };
 
@@ -203,7 +203,7 @@ template <class Point>
 KdTree<Point>::KdTree(std::vector<Point*> &points){
     this->root = nullptr;
 
-    this->buildTree(points, this->root, 0, 0, nullptr, true);
+    this->buildTree(points, this->root, 0, 0, nullptr);
 
     std::cout << "Number of threads: " << num_threads_atomic << std::endl;
 
@@ -248,9 +248,9 @@ void KdTree<Point>::_splitVector(std::vector<Point *> &points, int depth, size_t
             size_t random_index = (size_t) rand() % size;
 
             // If the index has not already been used, add it to the sample
-            if (used_indices.find(random_index) == used_indices.end())
+            if (used_indices.find((int)(random_index)) == used_indices.end())
             {
-                used_indices.insert(random_index);
+                used_indices.insert((int)(random_index));
                 sample.push_back(points[random_index]);
                 break;
             }
@@ -289,7 +289,7 @@ void KdTree<Point>::_splitVector(std::vector<Point *> &points, int depth, size_t
  * @param right Whether the current node is the right child of its parent
 */
 template <class Point>
-void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &node, int depth, int thread_no, KdTreeNode<Point> *parent, bool right)
+void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &node, int depth, int thread_no, KdTreeNode<Point> *parent)
 {    
     // Case: reached the leaf 
     if (points.size() == 1)
@@ -337,7 +337,7 @@ void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &n
         num_threads_atomic++;
 
         // Use thread to build left subtree
-        std::thread leftThread(&KdTree<Point>::buildTree, this, std::ref(leftPoints), std::ref(node->left), depth + 1, thread_no + 1, node, false);
+        std::thread leftThread(&KdTree<Point>::buildTree, this, std::ref(leftPoints), std::ref(node->left), depth + 1, thread_no + 1, node);
         
         // Build right subtree in current thread
         this->buildTree(rightPoints, std::ref(node->right), depth + 1, thread_no, node);
@@ -349,7 +349,7 @@ void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &n
     }
     else
     {
-        this->buildTree(leftPoints, std::ref(node->left), depth + 1, thread_no, node, false);
+        this->buildTree(leftPoints, std::ref(node->left), depth + 1, thread_no, node);
         this->buildTree(rightPoints, std::ref(node->right), depth + 1, thread_no, node);
     }
 
@@ -615,7 +615,7 @@ std::pair<KdTreeNode<Point> *, int> KdTree<Point>::_traverseTreeToLeaf(KdTreeNod
  * @param cutoff - the node to stop searching at
 */
 template <class Point>
-std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Point>> KdTree<Point>::kNearestNeighborSearch(KdTreeNode<Point> *node, Point * query, int k, KdTreeNode<Point> * cutoff, int depth)
+std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Point>> KdTree<Point>::kNearestNeighborSearch(KdTreeNode<Point> *node, Point * query, size_t k, KdTreeNode<Point> * cutoff, int depth)
 {
     // Traverse tree to leaf
     std::pair<KdTreeNode<Point> *, int> leaf_depth_pair = _traverseTreeToLeaf(node, query, depth);

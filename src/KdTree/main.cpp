@@ -77,12 +77,12 @@ Song* selectSong(string minPopularity, string connString){
         return songs[0];
     } else {
         cout << "Found " << songs.size() << " songs with that name, please select one: " << endl;
-        for (int i = 0; i < songs.size(); i++) {
+        for (size_t i = 0; i < songs.size(); i++) {
             cout << i << ". " << songs[i]->getName() << " - " << songs[i]->getArtist() << endl;
         }
         cout << songs.size() << ". None of the above, try again." << endl;
         cout << "Option: ";
-        int choice;
+        size_t choice;
         cin >> choice;
         if(choice == songs.size()) return nullptr;
         return songs[choice];
@@ -179,7 +179,7 @@ int main(int argc, char* argv[]){
             std::vector<Song*> points = tree.rangeSearch(tree.getRoot(), &min, &max, kdTreeRanges, 0);
 
             cout << "Found " << points.size() << " songs matching your search" << endl;
-            for(int i = 0; i < points.size(); i++){
+            for(size_t i = 0; i < points.size(); i++){
                 printSong(points[i]);
             }
 
