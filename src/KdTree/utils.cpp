@@ -33,40 +33,61 @@ double distance(Song &point1, Song &point2)
     double sum = 0;
     for (int i = 0; i < point1.dimensions(); i++)
     {
-        if (i == 3) { // instrumentalness
-            if ((point1[i] < 0.5 && point2[i] < 0.5) || (point1[i] > 0.5 && point2[i] > 0.5)) { //same category
-                sum += pow(point1[i] - point2[i], 2);
-            } else { //different category
+        // All this values come from the API 
+        switch (i) {
+            
+            case 3: // Instrumentalness
+                // Same category
+                if ((point1[i] < 0.5 && point2[i] < 0.5) || (point1[i] > 0.5 && point2[i] > 0.5)) { 
+                    sum += pow(point1[i] - point2[i], 2);
+                    break;
+                }
+                // Different Category
                 sum += pow(point1[i] - point2[i], 2) * 1.5;
-            }
-        }   
-        else if(i == 4) { //liveness - values above 0.8 means it was most likely performed live
-            if((point1[i] > 0.8 && point2[i] > 0.8) || (point1[i] < 0.8 && point2[i] < 0.8)){ //same category
-                sum += pow(point1[i] - point2[i], 2);
-            } else { //different category
+                break;
+
+            case 4: // Liveness
+                // Same category - Values above 0.8 means it was most likely performed live
+                if((point1[i] > 0.8 && point2[i] > 0.8) || (point1[i] < 0.8 && point2[i] < 0.8)){ 
+                    sum += pow(point1[i] - point2[i], 2);
+                    break;
+                } 
+                // Different Category
                 sum += pow(point1[i] - point2[i], 2) * 1.5;
-            }
-        } else if (i == 5) { //loudness
-            sum += pow(point1[i]/60 - point2[i]/60, 2);
-        }
-        else if (i == 6) { //speechiness
-            // values below 0.33 are intrumentals, between 0.33 and 0.66 are mixed, and above 0.66 are pure speech
-            // increase distance if they are not in the same category
-            if ((point1[i] < 0.33 && point2[i] < 0.33) || (point1[i] > 0.66 && point2[i] > 0.66) || (point1[i] > 0.33 && point1[i] < 0.66 && point2[i] > 0.33 && point2[i] < 0.66)) {
-                sum += pow(point1[i] - point2[i], 2);
-            } else {
+                break;
+
+            case 5: // Loudness
+                sum += pow(point1[i]/60 - point2[i]/60, 2);
+                break;
+
+            case 6: // Speechiness
+                // Values below 0.33 are intrumentals, between 0.33 and 0.66 are mixed, and above 0.66 are pure speech
+                // Increase distance if they are not in the same category
+                if ((point1[i] < 0.33 && point2[i] < 0.33) || (point1[i] > 0.66 && point2[i] > 0.66) || (point1[i] > 0.33 && point1[i] < 0.66 && point2[i] > 0.33 && point2[i] < 0.66)) {
+                    sum += pow(point1[i] - point2[i], 2);
+                    break;
+                } 
                 sum += pow(point1[i] - point2[i], 2) * 1.5;
-            }
-        }        
-        else if (i == 7) { //tempo
-            sum += pow(point1[i]/250 - point2[i]/250, 2);
-        } else if (i == 9) { //time signature
-            sum += pow(point1[i]/5 - point2[i]/5, 2);
-        } else if (i = 10) { //mode
-            sum *= point1[i] == point2[i] ? 1 : 1.5; // if same mode, multiply by 1, else multiply by 1.5 (change weights later)
-        }
-        else {
-            sum += pow(point1[i] - point2[i], 2);
+                break;
+            
+            case 7: // Tempo
+                sum += pow(point1[i]/250 - point2[i]/250, 2);
+                break;
+
+            case 9: // Time Signature
+                sum += pow(point1[i]/5 - point2[i]/5, 2);
+                break;
+            
+            case 10: // Mode
+                // If same mode, multiply by 1, else multiply by 1.5
+                sum *= point1[i] == point2[i] ? 1 : 1.5; 
+                break;
+
+            default:
+                sum += pow(point1[i] - point2[i], 2);
+
+
+            
         }
     }
     return sqrt(sum);
