@@ -32,6 +32,10 @@ FullTrack::FullTrack(std::string name, std::string artist, double acousticness, 
     this->mode = mode;
 }
 
+FullTrack::~FullTrack()
+{
+}
+
 std::string FullTrack::getName() {
     return this->name;
 }

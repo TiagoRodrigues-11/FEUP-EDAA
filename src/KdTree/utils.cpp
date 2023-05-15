@@ -132,8 +132,8 @@ vector<PartialTrack *> getPartialTrackVectorFromDbResults(pqxx::result r, vector
     std::vector<PartialTrack *> songs;
     for (pqxx::result::const_iterator c = r.begin(); c != r.end(); ++c) {
         map<string, double> attValues;
-        for(int i = 0; i < attributes.size(); i++){
-            attValues[attributes[i]] = c[i+2].as<float>();
+        for(size_t i = 0; i < attributes.size(); i++){
+            attValues[attributes[i]] = c[(int)(i)+2].as<float>();
         }
         PartialTrack *song = new PartialTrack(c[0].as<std::string>(), c[1].as<std::string>(), attValues);
         songs.push_back(song);

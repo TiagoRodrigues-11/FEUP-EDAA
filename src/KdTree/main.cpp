@@ -55,7 +55,7 @@ KdTree<PartialTrack> createKdTree(string minPopularity, string connString, vecto
 
     string inst = "SELECT name, artist_names";
 
-    for(int i = 0; i < attributes.size(); i++){
+    for(size_t i = 0; i < attributes.size(); i++){
         inst += (", " + attributes[i]);
     }
     
@@ -225,7 +225,7 @@ PartialTrack* selectSong(string minPopularity, string connString, vector<string>
 
     string inst = "SELECT name, artist_names";
 
-    for(int i = 0; i < attributes.size(); i++){
+    for(size_t i = 0; i < attributes.size(); i++){
         inst += (", " + attributes[i]);
     }
     
@@ -249,12 +249,12 @@ PartialTrack* selectSong(string minPopularity, string connString, vector<string>
         return songs[0];
     } else {
         cout << "Found " << songs.size() << " songs with that name, please select one: " << endl;
-        for (int i = 0; i < songs.size(); i++) {
+        for (size_t i = 0; i < songs.size(); i++) {
             cout << i << ". " << songs[i]->getName() << " - " << songs[i]->getArtist() << endl;
         }
         cout << songs.size() << ". None of the above, try again." << endl;
         cout << "Option: ";
-        int choice;
+        size_t choice;
         cin >> choice;
         if(choice == songs.size()) return nullptr;
         return songs[choice];
@@ -327,7 +327,7 @@ void usePartialTrackKdTree(string minPopularity, string connString){
             }
         } else if (choice == 2) {
             map<string, double> dim_attributes = map<string, double>();
-            for(int i = 0; i < attributes.size(); i++){
+            for(size_t i = 0; i < attributes.size(); i++){
                 dim_attributes[attributes[i]] = 0;
             }
             PartialTrack min = PartialTrack("", "", dim_attributes);
@@ -340,8 +340,8 @@ void usePartialTrackKdTree(string minPopularity, string connString){
                 cout << "Please enter the maximum value for " << attributes[i] << ": ";
                 cin >> maxValue;
 
-                min.setDimension(i, minValue);
-                max.setDimension(i, maxValue);
+                min.setDimension((int)(i), minValue);
+                max.setDimension((int)(i), maxValue);
             }
             printSong(&min);
             printSong(&max);
@@ -353,7 +353,7 @@ void usePartialTrackKdTree(string minPopularity, string connString){
             std::vector<PartialTrack*> points = tree.rangeSearch(tree.getRoot(), &min, &max, kdTreeRanges, 0);
 
             cout << "Found " << points.size() << " songs matching your search" << endl;
-            for(int i = 0; i < points.size(); i++){
+            for(size_t i = 0; i < points.size(); i++){
                 printSong(points[i]);
             }
 

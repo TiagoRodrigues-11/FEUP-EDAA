@@ -23,6 +23,7 @@ class FullTrack : public Song {
     public:
         FullTrack();
         FullTrack(std::string name, std::string artist, double acousticness, double danceability, double energy, double instrumentalness, double liveness, double loudness, double speechiness, double tempo, double valence, double time_signature, double mode);
+        ~FullTrack();
         std::string getName();
         std::string getArtist();
 
