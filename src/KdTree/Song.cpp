@@ -1,6 +1,6 @@
 #include "Song.h"
 
-Song::Song() {
+FullTrack::FullTrack() {
     this->name = "";
     this->artist = "";
     this->acousticness = 0;
@@ -16,7 +16,7 @@ Song::Song() {
     this->mode = 0;
 }
 
-Song::Song(std::string name, std::string artist, double acousticness, double danceability, double energy, double instrumentalness, double liveness, double loudness, double speechiness, double tempo, double valence, double time_signature, double mode) {
+FullTrack::FullTrack(std::string name, std::string artist, double acousticness, double danceability, double energy, double instrumentalness, double liveness, double loudness, double speechiness, double tempo, double valence, double time_signature, double mode) {
     this->name = name;
     this->artist = artist;
     this->acousticness = acousticness;
@@ -32,22 +32,19 @@ Song::Song(std::string name, std::string artist, double acousticness, double dan
     this->mode = mode;
 }
 
-Song::~Song() {
-}
-
-std::string Song::getName() {
+std::string FullTrack::getName() {
     return this->name;
 }
 
-std::string Song::getArtist() {
+std::string FullTrack::getArtist() {
     return this->artist;
 }
 
-int Song::dimensions() {
+int FullTrack::dimensions() {
     return 11;
 }
 
-double Song::operator[] (int i) {
+double FullTrack::operator[] (int i) {
     switch (i) {
         case 0:
             return this->acousticness;
@@ -76,7 +73,7 @@ double Song::operator[] (int i) {
     }
 }
 
-void Song::setDimension(int dimension, double value) {
+void FullTrack::setDimension(int dimension, double value) {
     switch (dimension) {
         case 0:
             this->acousticness = value;
@@ -116,11 +113,11 @@ void Song::setDimension(int dimension, double value) {
     }
 }
 
-bool Song::operator== (Song song) {
+bool FullTrack::operator== (FullTrack song) {
     return this->name == song.getName() && this->artist == song.getArtist();
 }
 
-std::string Song::getDimensionName(int i) {
+std::string FullTrack::getDimensionName(int i) {
     switch (i) {
         case 0:
             return "acousticness";
@@ -147,4 +144,46 @@ std::string Song::getDimensionName(int i) {
         default:
             return "";
     }
+}
+
+PartialTrack::PartialTrack(){
+    this->artist = "";
+    this->name = "";
+    this->attributes = std::map<std::string, double>();
+}
+
+PartialTrack::PartialTrack(std::string name, std::string artist, std::map<std::string, double> attributes){
+    this->name = name;
+    this->artist = artist;
+    this->attributes = attributes;
+}
+
+std::string PartialTrack::getName(){
+    return this->name;
+}
+
+std::string PartialTrack::getArtist(){
+    return this->artist;
+}
+
+int PartialTrack::dimensions(){
+    return this->attributes.size();
+}
+
+double PartialTrack::operator[] (int i){
+    auto it = (this->attributes).begin();
+    std::advance(it, i);
+    return it->second;
+}
+
+void PartialTrack::setDimension(int dimension, double value){
+    auto it = (this->attributes).begin();
+    std::advance(it, dimension);
+    it->second = value;
+}
+
+std::string PartialTrack::getDimensionName(int dimension){
+    auto it = (this->attributes).begin();
+    std::advance(it, dimension);
+    return it->first;
 }
