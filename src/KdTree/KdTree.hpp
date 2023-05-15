@@ -171,9 +171,6 @@ class KdTree
 {
 private:
     KdTreeNode<Point> *root;
-    // TODO _insert and remove functions aren't used anywhere or properly implemented
-    void _insert(KdTreeNode<Point> *node, Point point, int depth, int k);
-    void _remove(KdTreeNode<Point> *node, Point point, int depth, int k);
     bool inRange(Point *point, Point *min, Point *max);
     void buildTree(std::vector<Point *> &points, KdTreeNode<Point> *&node, int depth, int thread_no, KdTreeNode<Point> *parent);
     void _splitVector(std::vector<Point *> &points, int depth, size_t sample_size, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints);
@@ -185,8 +182,6 @@ public:
     KdTree();
     KdTree(std::vector<Point*> &points);
     ~KdTree();
-    void insert(Point point);
-    void remove(Point point);
     void print(KdTreeNode<Point> *node, int depth);
     std::vector<Point*> rangeSearch(KdTreeNode<Point> *node, Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange, int depth = 0);
     std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Point>> kNearestNeighborSearch(KdTreeNode<Point> *node, Point *query, size_t k = 1, KdTreeNode<Point> * cutoff = nullptr, int depth = 0);
@@ -278,7 +273,6 @@ void KdTree<Point>::_splitVector(std::vector<Point *> &points, int depth, size_t
         rightPoints.assign(median_iterator, points.end());
 }
 
-// TODO dafuq is right for?
 /**
  * @brief Build the tree
  * @param points The points to build the tree from
@@ -380,41 +374,6 @@ bool KdTree<Point>::inRange(Point *point, Point *min, Point *max)
         }
     }
     return true;
-}
-
-// TODO do these two functions make sense?
-template <class Point>
-void KdTree<Point>::insert(Point point)
-{
-    if (this->root == nullptr)
-    {
-        this->root = new KdTreeNode<Point>(point);
-    }
-    else
-    {
-        this->_insert(this->root, point, 0, point.dimensions());
-    }
-}
-
-template <class Point>
-void KdTree<Point>::_insert(KdTreeNode<Point> *node, Point point, int depth, int k)
-{
-    if (node == nullptr)
-    {
-        node = new KdTreeNode<Point>(point);
-    }
-    else
-    {
-        int axis = depth % k;
-        if (point[axis] <= node->point[axis])
-        {
-            this->_insert(node->left, point, depth + 1, k);
-        }
-        else
-        {
-            this->_insert(node->right, point, depth + 1, k);
-        }
-    }
 }
 
 /**
@@ -627,8 +586,8 @@ std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Poi
 
     // Initialize current and previous nodes
     KdTreeNode<Point> *current = leaf, *previous = nullptr;
-
-    // TODO: n deviamos tar a adicionar o 1o ponto a queue?
+    
+    queue.push(current->point);
 
     // While we haven't reached the cutoff node we keep going up the tree
     while(current->parent != cutoff) {
