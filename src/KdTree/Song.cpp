@@ -186,6 +186,10 @@ void PartialTrack::setDimension(int dimension, double value){
     it->second = value;
 }
 
+void PartialTrack::setDimension(std::string dimension, double value){
+    (this->attributes)[dimension] = value;
+}
+
 std::string PartialTrack::getDimensionName(int dimension){
     auto it = (this->attributes).begin();
     std::advance(it, dimension);

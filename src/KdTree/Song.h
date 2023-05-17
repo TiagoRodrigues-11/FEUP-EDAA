@@ -66,6 +66,7 @@ class PartialTrack : public Song {
         double operator[] (int i);
         bool operator== (PartialTrack song);
         void setDimension(int dimension, double value);
+        void setDimension(std::string dimension, double value);
         std::string getDimensionName(int dimension);
 
     private:

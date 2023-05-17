@@ -61,61 +61,47 @@ template <class Point>
 double distance(Point point1, Point point2)
 {
     double sum = 0;
-    for (int i = 0; i < point1.dimensions(); i++)
+    int dimensions = (int)(point1.dimensions());
+    for (int i = 0; i < dimensions; i++)
     {
+        std::string dimensionName = point1.getDimensionName(i);
         // All this values come from the API 
-        switch (i) {
-            
-            case 3: // Instrumentalness
-                // Same category
-                if ((point1[i] < 0.5 && point2[i] < 0.5) || (point1[i] > 0.5 && point2[i] > 0.5)) { 
-                    sum += pow(point1[i] - point2[i], 2);
-                    break;
-                }
-                // Different Category
-                sum += pow(point1[i] - point2[i], 2) * 1.5;
-                break;
-
-            case 4: // Liveness
-                // Same category - Values above 0.8 means it was most likely performed live
-                if((point1[i] > 0.8 && point2[i] > 0.8) || (point1[i] < 0.8 && point2[i] < 0.8)){ 
-                    sum += pow(point1[i] - point2[i], 2);
-                    break;
-                } 
-                // Different Category
-                sum += pow(point1[i] - point2[i], 2) * 1.5;
-                break;
-
-            case 5: // Loudness
-                sum += pow(point1[i]/60 - point2[i]/60, 2);
-                break;
-
-            case 6: // Speechiness
-                // Values below 0.33 are intrumentals, between 0.33 and 0.66 are mixed, and above 0.66 are pure speech
-                // Increase distance if they are not in the same category
-                if ((point1[i] < 0.33 && point2[i] < 0.33) || (point1[i] > 0.66 && point2[i] > 0.66) || (point1[i] > 0.33 && point1[i] < 0.66 && point2[i] > 0.33 && point2[i] < 0.66)) {
-                    sum += pow(point1[i] - point2[i], 2);
-                    break;
-                } 
-                sum += pow(point1[i] - point2[i], 2) * 1.5;
-                break;
-            
-            case 7: // Tempo
-                sum += pow(point1[i]/250 - point2[i]/250, 2);
-                break;
-
-            case 9: // Time Signature
-                sum += pow(point1[i]/5 - point2[i]/5, 2);
-                break;
-            
-            case 10: // Mode
-                // If same mode, multiply by 1, else multiply by 1.5
-                sum *= point1[i] == point2[i] ? 1 : 1.5; 
-                break;
-
-            default:
+        if(dimensionName == "instrumentalness"){
+            // Same category
+            if ((point1[i] < 0.5 && point2[i] < 0.5) || (point1[i] > 0.5 && point2[i] > 0.5)) { 
                 sum += pow(point1[i] - point2[i], 2);
-        }
+                break;
+            }
+            // Different Category
+            sum += pow(point1[i] - point2[i], 2) * 1.5;
+        } else if (dimensionName == "liveness"){
+            // Same category - Values above 0.8 means it was most likely performed live
+            if((point1[i] > 0.8 && point2[i] > 0.8) || (point1[i] < 0.8 && point2[i] < 0.8)){ 
+                sum += pow(point1[i] - point2[i], 2);
+                break;
+            } 
+            // Different Category
+            sum += pow(point1[i] - point2[i], 2) * 1.5;
+        } else if (dimensionName == "loudness") {
+            sum += pow(point1[i]/60 - point2[i]/60, 2);
+        } else if (dimensionName == "speechiness"){
+            // Values below 0.33 are intrumentals, between 0.33 and 0.66 are mixed, and above 0.66 are pure speech
+            // Increase distance if they are not in the same category
+            if ((point1[i] < 0.33 && point2[i] < 0.33) || (point1[i] > 0.66 && point2[i] > 0.66) || (point1[i] > 0.33 && point1[i] < 0.66 && point2[i] > 0.33 && point2[i] < 0.66)) {
+                sum += pow(point1[i] - point2[i], 2);
+                break;
+            } 
+            sum += pow(point1[i] - point2[i], 2) * 1.5;
+        } else if (dimensionName == "tempo") {
+            sum += pow(point1[i]/250 - point2[i]/250, 2);
+        } else if (dimensionName == "time_signature") {
+            sum += pow(point1[i]/5 - point2[i]/5, 2);
+        } else if (dimensionName == "mode") {
+            // If same mode, multiply by 1, else multiply by 1.5
+            sum *= point1[i] == point2[i] ? 1 : 1.5; 
+        } else {
+            sum += pow(point1[i] - point2[i], 2);
+        }       
     }
     return sqrt(sum);
 }
@@ -153,7 +139,7 @@ public:
     ~KdTreeNode();
     Point getPoint() { return *point; }
 
-    void print();
+    void print(int depth = 0);
 
     friend class KdTree<Point>;
 };
@@ -176,9 +162,18 @@ KdTreeNode<Point>::~KdTreeNode()
 }
 
 template <class Point>
-void KdTreeNode<Point>::print()
+void KdTreeNode<Point>::print(int depth)
 {
-    std::cout << *point << std::endl;
+    // Name - Author
+    std::cout << this->getPoint().getName() << " - " << this->getPoint().getArtist() << std::endl;
+    // Other attributes
+
+    for(int i = 0; i < (int)(this->getPoint().dimensions()); i++){
+        for(int i = 0; i < depth; i++) std::cout << " ";
+        std::cout << this->getPoint().getDimensionName(i) << ": " << (this->getPoint())[i] << std::endl;
+    }
+
+    std::cout << std::endl;
 }
 
 /**
@@ -191,7 +186,7 @@ private:
     KdTreeNode<Point> *root;
     bool inRange(Point *point, Point *min, Point *max);
     void buildTree(std::vector<Point *> &points, KdTreeNode<Point> *&node, int depth, int thread_no, KdTreeNode<Point> *parent);
-    void _splitVector(std::vector<Point *> &points, int depth, size_t sample_size, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints);
+    Point* _splitVector(std::vector<Point *> &points, int depth, size_t sample_size, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints);
     std::vector<Point*> reportSubtree(KdTreeNode<Point> *node);
     std::pair<KdTreeNode<Point> *, int> _traverseTreeToLeaf(KdTreeNode<Point> *node, Point *point, int depth = 0);
     bool subregionContained(Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange);
@@ -222,8 +217,11 @@ KdTree<Point>::KdTree(std::vector<Point*> &points){
 
     for (size_t i = 0; i <= MAX_THREADS; i++)
     {
-        std::cout << "Thread " << i << " sort time: " << sort_time[i] << std::endl;
+        if(sort_time[i] != 0) {
+            std::cout << "Thread " << i << " sort time: " << sort_time[i] << std::endl;
+        }
     }
+    
 }
 
 /**
@@ -236,10 +234,11 @@ KdTree<Point>::KdTree(std::vector<Point*> &points){
  * @param rightPoints Vector of points to store the right points in
  */
 template <class Point>
-void KdTree<Point>::_splitVector(std::vector<Point *> &points, int depth, size_t sample_size, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints)
+Point* KdTree<Point>::_splitVector(std::vector<Point *> &points, int depth, size_t sample_size, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints)
 {
     // Get splitting axis
-    int axis = depth % (*points[0]).dimensions();
+    int dimensions = (int)((*points[0]).dimensions());
+    int axis = depth % dimensions;
 
     size_t size = points.size();
 
@@ -289,7 +288,18 @@ void KdTree<Point>::_splitVector(std::vector<Point *> &points, int depth, size_t
         rightPoints.clear();
     else
         rightPoints.assign(median_iterator, points.end());
+    
+    for (auto it = leftPoints.begin(); it != leftPoints.end(); ++it)
+    {
+        if ((**it)[axis] == median) {
+            Point * median_point = *it;
+            leftPoints.erase(it);
+            return median_point;
+        }
+    }
+    return nullptr;
 }
+
 
 /**
  * @brief Build the tree
@@ -310,7 +320,7 @@ void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &n
         node = node_obj;
         return;
     }
-    if (points.empty())
+    else if (points.empty())
     {
         return;
     }
@@ -322,11 +332,7 @@ void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &n
     std::vector<Point*> rightPoints;
 
     // Split the vector into two vectors, using random sampling to determine the median
-    this->_splitVector(points, depth, 1000, leftPoints, rightPoints);
-
-    Point *median = leftPoints[leftPoints.size() - 1];
-
-    leftPoints.pop_back();
+    Point *median = this->_splitVector(points, depth, 1000, leftPoints, rightPoints);
 
     points.clear();
 
@@ -384,7 +390,8 @@ KdTree<Point>::~KdTree()
 template <class Point>
 bool KdTree<Point>::inRange(Point *point, Point *min, Point *max)
 {
-    for (int i = 0; i < point->dimensions(); i++)
+    int dimensions = (int)(point->dimensions());
+    for (int i = 0; i < dimensions; i++)
     {
         if ((*point)[i] < (*min)[i] || (*point)[i] > (*max)[i])
         {
@@ -424,7 +431,8 @@ std::vector<Point*> KdTree<Point>::reportSubtree(KdTreeNode<Point> *node) {
 template <class Point>
 bool KdTree<Point>::subregionContained(Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange) {
     // Go through each dimension
-    for (int i = 0; i < min->dimensions(); i++) {
+    int dimensions = (int)(min->dimensions());
+    for (int i = 0; i < dimensions; i++) {
         std::pair<double, double> dimensionRange = kdTreeRange[i];
 
         // If the min value of the interval in this dimension is greater than the min value of the subregion, then the range is not contained
@@ -449,8 +457,10 @@ bool KdTree<Point>::subregionContained(Point * min, Point * max, std::map<int, s
  */
 template <class Point>
 bool KdTree<Point>::subregionIntersects(Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange) {
+    
+    int dimensions = (int)(min->dimensions());
     // Go through each dimension
-    for (int i = 0; i < min->dimensions(); i++) {
+    for (int i = 0; i < dimensions; i++) {
         std::pair<double, double> dimensionRange = kdTreeRange[i];
 
         // If the min value of the subregion is greater or equal than the min value of the interval in this dimension, then the range intersects
@@ -486,7 +496,8 @@ std::vector<Point*> KdTree<Point>::rangeSearch(KdTreeNode<Point> *node, Point* m
     }
 
     // Get the axis of the node
-    int axis = depth % (node->point)->dimensions();
+    int dimensions = (int)(node->point)->dimensions();
+    int axis = depth % dimensions;
 
     // If the left child is not null, check if it is contained or intersects the range
     if (node->left != nullptr) {
@@ -538,7 +549,12 @@ void KdTree<Point>::print(KdTreeNode<Point> *node, int depth)
     {
         std::cout << " ";
     }
-    std::cout << node->point << std::endl;
+    node->print(depth);
+    for (int i = 0; i < depth; i++)
+    {
+        std::cout << " ";
+    }
+    std::cout << "Split axis: " << node->point->getDimensionName(depth % (int)(node->point->dimensions())) << std::endl;
     this->print(node->left, depth + 1);
     this->print(node->right, depth + 1);
 }
@@ -553,7 +569,9 @@ void KdTree<Point>::print(KdTreeNode<Point> *node, int depth)
  */
 template <class Point>
 std::pair<KdTreeNode<Point> *, int> KdTree<Point>::_traverseTreeToLeaf(KdTreeNode<Point> *node, Point * point, int depth) {
-    int axis = depth % point->dimensions();
+    
+    int dimensions = (int)(point->dimensions());
+    int axis = depth % dimensions;
     // If the point is lesser than or equal to the current node, go left
     if ((*point)[axis] <= (*(node->point))[axis]) {
         // If the left node is null
@@ -628,7 +646,8 @@ std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Poi
             continue;
         }
         
-        int new_dim = current_depth % query->dimensions();
+        int dimensions = (int)(query->dimensions());
+        int new_dim = current_depth % dimensions;
         
         // Check if there can be a closer point in other branch
         // Check if hyperplane of the new node can have a closer point than the farthest point in the queue
