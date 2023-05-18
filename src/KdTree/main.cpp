@@ -12,7 +12,13 @@
 
 using namespace std;
 
-KdTree<FullTrack> createKdTree(string minPopularity, string connString){
+// trim from end (in place)
+static inline void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(),
+            std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+}
+
+KdTree<FullTrack> createKdTree(string minPopularity, string connString, unsigned int numThreads, size_t sampleSize, int minPointsToCreateThread){
     pqxx::connection c(connString);
     
     cout << "Starting with minimum song popularity " << minPopularity << endl;
@@ -36,7 +42,7 @@ KdTree<FullTrack> createKdTree(string minPopularity, string connString){
     auto start = std::chrono::system_clock::now();
 
     // Make a KdTree
-    KdTree<FullTrack> tree = KdTree<FullTrack>(songs);
+    KdTree<FullTrack> tree = KdTree<FullTrack>(songs, numThreads, sampleSize, minPointsToCreateThread);
 
     auto end = std::chrono::system_clock::now();
 
@@ -47,7 +53,7 @@ KdTree<FullTrack> createKdTree(string minPopularity, string connString){
     return tree;
 }
 
-KdTree<PartialTrack> createKdTree(string minPopularity, string connString, vector<string> attributes){
+KdTree<PartialTrack> createKdTree(string minPopularity, string connString, vector<string> attributes, unsigned int numThreads, size_t sampleSize, int minPointsToCreateThread){
     pqxx::connection c(connString);
     
     cout << "Starting with minimum song popularity " << minPopularity << endl;
@@ -77,7 +83,7 @@ KdTree<PartialTrack> createKdTree(string minPopularity, string connString, vecto
     auto start = std::chrono::system_clock::now();
 
     // Make a KdTree
-    KdTree<PartialTrack> tree = KdTree<PartialTrack>(songs);
+    KdTree<PartialTrack> tree = KdTree<PartialTrack>(songs, numThreads, sampleSize, minPointsToCreateThread);
 
     auto end = std::chrono::system_clock::now();
 
@@ -88,14 +94,17 @@ KdTree<PartialTrack> createKdTree(string minPopularity, string connString, vecto
     return tree;
 }
 
-FullTrack* selectSong(string minPopularity, string connString){
+FullTrack* selectSong(string minPopularity, string connString, istream &inputStream){
     pqxx::connection c(connString);
     
     string name;
 
     cout << "Please enter the name of the song you would like to search for: " << endl;
     cout << "Name: ";
-    std::getline(std::cin >> std::ws, name);
+    std::getline(inputStream >> std::ws, name);
+
+    // Remove trailing whitespace
+    rtrim(name);
 
     char sql[1024] = {0};
     snprintf(sql, 1023, "SELECT name, artist_names, acousticness, danceability, energy, instrumentalness, liveness, loudness, speechiness, tempo, valence, time_signature, mode " 
@@ -125,14 +134,14 @@ FullTrack* selectSong(string minPopularity, string connString){
         cout << songs.size() << ". None of the above, try again." << endl;
         cout << "Option: ";
         size_t choice;
-        cin >> choice;
+        inputStream >> choice;
         if(choice == songs.size()) return nullptr;
         return songs[choice];
     }
 }
 
-void useFullTrackKdTree(string minPopularity, string connString){
-    KdTree<FullTrack> tree = createKdTree(minPopularity, connString);
+void useFullTrackKdTree(string minPopularity, string connString, unsigned int numThreads, size_t sampleSize, int minPointsToCreateThread, istream &inputStream){
+    KdTree<FullTrack> tree = createKdTree(minPopularity, connString, numThreads, sampleSize, minPointsToCreateThread);
 
     int choice;
     cout << "What would you like to do?" << endl;
@@ -140,7 +149,7 @@ void useFullTrackKdTree(string minPopularity, string connString){
     cout << "2. Range search" << endl;
     cout << "3. Exit" << endl;
     cout << "Option: ";
-    cin >> choice;
+    inputStream >> choice;
 
     bool exit = false;
     while(!exit){
@@ -148,7 +157,7 @@ void useFullTrackKdTree(string minPopularity, string connString){
             while(true){
                 FullTrack *selected = nullptr;
                 while(true){
-                    selected = selectSong(minPopularity, connString);
+                    selected = selectSong(minPopularity, connString, inputStream);
                     if(selected != nullptr){
                         cout << "Selected song: " << selected->getName() << endl;
                         break;
@@ -160,7 +169,7 @@ void useFullTrackKdTree(string minPopularity, string connString){
                 cout << "2. Choose another song." << endl;
                 cout << "3. Exit." << endl;
                 cout << "Option: ";
-                cin >> choice;
+                inputStream >> choice;
 
                 if(choice == 1){
                     std::priority_queue<FullTrack *, std::vector<FullTrack *>, ComparePointsClosestFirst<FullTrack>> neighbour = tree.kNearestNeighborSearch(tree.getRoot(), selected, 10);
@@ -191,9 +200,9 @@ void useFullTrackKdTree(string minPopularity, string connString){
             for (int i = 0; i < dimesions; i++) {
                 double minValue, maxValue;
                 cout << "Please enter the minimum value for " << min.getDimensionName(i) << ": ";
-                cin >> minValue;
+                inputStream >> minValue;
                 cout << "Please enter the maximum value for " << min.getDimensionName(i) << ": ";
-                cin >> maxValue;
+                inputStream >> maxValue;
                 min.setDimension(i, minValue);
                 max.setDimension(i, maxValue);
             }
@@ -217,7 +226,7 @@ void useFullTrackKdTree(string minPopularity, string connString){
     }
 }
 
-PartialTrack* selectSong(string minPopularity, string connString, vector<string> attributes){
+PartialTrack* selectSong(string minPopularity, string connString, vector<string> attributes, istream &inputStream){
     pqxx::connection c(connString);
     
     string name;
@@ -225,6 +234,9 @@ PartialTrack* selectSong(string minPopularity, string connString, vector<string>
     cout << "Please enter the name of the song you would like to search for: " << endl;
     cout << "Name: ";
     std::getline(std::cin >> std::ws, name);
+
+    // Remove trailing whitespace
+    rtrim(name);
 
     string inst = "SELECT name, artist_names";
 
@@ -258,13 +270,13 @@ PartialTrack* selectSong(string minPopularity, string connString, vector<string>
         cout << songs.size() << ". None of the above, try again." << endl;
         cout << "Option: ";
         size_t choice;
-        cin >> choice;
+        inputStream >> choice;
         if(choice == songs.size()) return nullptr;
         return songs[choice];
     }
 }
 
-void usePartialTrackKdTree(string minPopularity, string connString){
+void usePartialTrackKdTree(string minPopularity, string connString, unsigned int numThreads, size_t sampleSize, int minPointsToCreateThread, istream &inputStream){
     std::vector<std::string> attributes = std::vector<std::string>();
     
     FullTrack min = FullTrack();
@@ -272,12 +284,12 @@ void usePartialTrackKdTree(string minPopularity, string connString){
     for (int i = 0; i < dimensions; i++) {
         string dim_choice;
         cout << "Use " << min.getDimensionName(i) << "(y/n): ";
-        cin >> dim_choice;
+        inputStream >> dim_choice;
 
         if(dim_choice == "y") attributes.push_back(min.getDimensionName(i));
     }
 
-    KdTree<PartialTrack> tree = createKdTree(minPopularity, connString, attributes);
+    KdTree<PartialTrack> tree = createKdTree(minPopularity, connString, attributes, numThreads, sampleSize, minPointsToCreateThread);
 
     int choice;
     cout << "What would you like to do?" << endl;
@@ -285,7 +297,7 @@ void usePartialTrackKdTree(string minPopularity, string connString){
     cout << "2. Range search" << endl;
     cout << "3. Exit" << endl;
     cout << "Option: ";
-    cin >> choice;
+    inputStream >> choice;
 
     bool exit = false;
     while(!exit){
@@ -293,7 +305,7 @@ void usePartialTrackKdTree(string minPopularity, string connString){
             while(true){
                 PartialTrack *selected = nullptr;
                 while(true){
-                    selected = selectSong(minPopularity, connString, attributes);
+                    selected = selectSong(minPopularity, connString, attributes, inputStream);
                     if(selected != nullptr){
                         cout << "Selected song: " << selected->getName() << endl;
                         break;
@@ -305,7 +317,7 @@ void usePartialTrackKdTree(string minPopularity, string connString){
                 cout << "2. Choose another song." << endl;
                 cout << "3. Exit." << endl;
                 cout << "Option: ";
-                cin >> choice;
+                inputStream >> choice;
 
                 if(choice == 1){
                     std::priority_queue<PartialTrack *, std::vector<PartialTrack *>, ComparePointsClosestFirst<PartialTrack>> neighbour = tree.kNearestNeighborSearch(tree.getRoot(), selected, 10);
@@ -344,9 +356,9 @@ void usePartialTrackKdTree(string minPopularity, string connString){
                 double minValue, maxValue;
                 string dimensionName = min.getDimensionName(i);
                 cout << "Please enter the minimum value for " << dimensionName << ": ";
-                cin >> minValue;
+                inputStream >> minValue;
                 cout << "Please enter the maximum value for " << dimensionName << ": ";
-                cin >> maxValue;
+                inputStream >> maxValue;
 
                 min.setDimension(i, minValue);
                 max.setDimension(i, maxValue);
@@ -377,14 +389,49 @@ void usePartialTrackKdTree(string minPopularity, string connString){
 
 int main(int argc, char* argv[]){
     // Check arguments
-    if (argc != 2) {
-        cout << "Usage: " << argv[0] << " <minimum song popularity> [env file path]" << endl;
+    if (argc < 2 || argc > 12) {
+        cout << "Usage: " << argv[0] << " <minimum song popularity> [-e env file path] [-t number of threads] [-s sample_size for median approximation] [--ts min points to create thread] [--test filepath]" << endl;
         return 1;
     }
 
-    // Get environment variables
-    string envPath = argc == 3 ? argv[2] : ".env";
+    char *envPath = nullptr;
+    unsigned int numThreads = UINT16_MAX;
+    size_t sampleSize = 1000;
+    int minPointsToCreateThread = 100000;
+    bool test = false;
+    char *testFilePath = nullptr;
+        
+    //Check flags
+    for (int argn = 2; argn < argc - 1; argn += 2) {
+        char *arg = argv[argn];
+        char *nextArg = argv[argn + 1];
+        
+        if(std::strcmp(arg, "-e") == 0){
+            envPath = nextArg;
+        }
+        else if(std::strcmp(arg, "-t") == 0){
+            numThreads = (unsigned int) std::stoi(nextArg);
+        }
+        else if(std::strcmp(arg, "-s") == 0){
+            sampleSize = (size_t) std::stoi(nextArg); 
+        }
+        else if (std::strcmp(arg, "--ts") == 0) {
+            minPointsToCreateThread = std::stoi(nextArg);
+        }
+        else if (std::strcmp(arg, "--test") == 0) {
+            test = true;
+            testFilePath = nextArg;
+        }
+        else{
+            cout << "Usage: " << argv[0] << " <minimum song popularity> [-e env file path] [-t number of threads] [-s sample_size for median approximation] [--ts min points to create thread] [--test filepath]" << endl;
+            return 1;
+        }
+    }
+
+    if(envPath == nullptr) envPath = ".env";
     string hostaddr = getEnvVariableFromFile(envPath, "POSTGRES_HOST_ADDRESS");
+
+    ifstream inputStream(testFilePath);
 
     char connString[1024] = {0};
     snprintf(connString, 1023, "dbname=db user=postgres password=password hostaddr=%s port=5432", hostaddr.c_str());
@@ -394,14 +441,15 @@ int main(int argc, char* argv[]){
     cout << "1. Standard" << endl;
     cout << "2. Customized" << endl;
     cout << "Option: ";
-    cin >> choice;
+    if (test) inputStream >> choice;
+    else cin >> choice;
 
     switch(choice) {
         case 1:
-            useFullTrackKdTree(argv[1], connString);
+            useFullTrackKdTree(argv[1], connString, numThreads, sampleSize, minPointsToCreateThread, test ? inputStream : cin);
             break;
         case 2:
-            usePartialTrackKdTree(argv[1], connString);
+            usePartialTrackKdTree(argv[1], connString, numThreads, sampleSize, minPointsToCreateThread, test ? inputStream : cin);
             break;
         default:
             cout << "Error" << endl;

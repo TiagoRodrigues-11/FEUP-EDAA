@@ -15,6 +15,8 @@
 #include <map>
 
 #define MAX_THREADS std::thread::hardware_concurrency() - 1
+#define SAMPLE_SIZE 1000
+#define THREAD_SPLIT_THRESHOLD 10000
 
 std::atomic<unsigned int> num_threads_atomic(0);
 
@@ -184,16 +186,19 @@ class KdTree
 {
 private:
     KdTreeNode<Point> *root;
+    const unsigned int max_num_threads;
+    const size_t sample_size;
+    const int thread_split_threshold;
     bool inRange(Point *point, Point *min, Point *max);
     void buildTree(std::vector<Point *> &points, KdTreeNode<Point> *&node, int depth, int thread_no, KdTreeNode<Point> *parent);
-    Point* _splitVector(std::vector<Point *> &points, int depth, size_t sample_size, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints);
+    Point* _splitVector(std::vector<Point *> &points, int depth, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints);
     std::vector<Point*> reportSubtree(KdTreeNode<Point> *node);
     std::pair<KdTreeNode<Point> *, int> _traverseTreeToLeaf(KdTreeNode<Point> *node, Point *point, int depth = 0);
     bool subregionContained(Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange);
     bool subregionIntersects(Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange);
 public:
-    KdTree();
-    KdTree(std::vector<Point*> &points);
+    KdTree(unsigned int max_num_threads = MAX_THREADS, size_t sample_size = SAMPLE_SIZE, int thread_split_threshold = THREAD_SPLIT_THRESHOLD);
+    KdTree(std::vector<Point*> &points, unsigned int max_num_threads = MAX_THREADS, size_t sample_size = SAMPLE_SIZE, int thread_split_threshold = THREAD_SPLIT_THRESHOLD);
     ~KdTree();
     void print(KdTreeNode<Point> *node, int depth);
     std::vector<Point*> rangeSearch(KdTreeNode<Point> *node, Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange, int depth = 0);
@@ -202,20 +207,20 @@ public:
 };
 
 template <class Point>
-KdTree<Point>::KdTree()
+KdTree<Point>::KdTree(unsigned int max_num_threads, size_t sample_size, int thread_split_threshold) : max_num_threads(max_num_threads > MAX_THREADS ? MAX_THREADS : max_num_threads), sample_size(SAMPLE_SIZE), thread_split_threshold(THREAD_SPLIT_THRESHOLD)
 {
     this->root = nullptr;
 }
 
 template <class Point>
-KdTree<Point>::KdTree(std::vector<Point*> &points){
+KdTree<Point>::KdTree(std::vector<Point*> &points, unsigned int max_num_threads, size_t sample_size, int thread_split_threshold) : max_num_threads(max_num_threads > MAX_THREADS ? MAX_THREADS : max_num_threads), sample_size(SAMPLE_SIZE), thread_split_threshold(THREAD_SPLIT_THRESHOLD){
     this->root = nullptr;
 
     this->buildTree(points, this->root, 0, 0, nullptr);
 
     std::cout << "Number of threads: " << num_threads_atomic << std::endl;
 
-    for (size_t i = 0; i <= MAX_THREADS; i++)
+    for (size_t i = 0; i <= this->max_num_threads; i++)
     {
         if(sort_time[i] != 0) {
             std::cout << "Thread " << i << " sort time: " << sort_time[i] << std::endl;
@@ -232,27 +237,41 @@ KdTree<Point>::KdTree(std::vector<Point*> &points){
  * @param sample_size Size of the sample to take
  * @param leftPoints Vector of points to store the left points in
  * @param rightPoints Vector of points to store the right points in
- */
+*/
+/*
+Time Complexity: O(n logn)
+ - Random sample: O(sample_size) -> NAO IMPORTA sample_size constant
+ - Sort: O(n logn)
+ - Partition: O(n)
+    -> O(sample_size + n logn + n) = O(n logn) -> Epah acho que está certo
+
+Space Complexity: O(n)
+ - used_indices: O(sample_size)
+ - 
+ - 
+*/
+
 template <class Point>
-Point* KdTree<Point>::_splitVector(std::vector<Point *> &points, int depth, size_t sample_size, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints)
+Point* KdTree<Point>::_splitVector(std::vector<Point *> &points, int depth, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints)
 {
     // Get splitting axis
     int dimensions = (int)((*points[0]).dimensions());
     int axis = depth % dimensions;
 
     size_t size = points.size();
+    size_t local_sample_size = this->sample_size;
 
     // If the size of the vector is less than the sample size, just use the whole vector
-    if (size < sample_size)
+    if (size < local_sample_size)
     {
-        sample_size = size;
+        local_sample_size = size;
     }
 
     std::set<int> used_indices;
     std::vector<Point *> sample;
 
-    // Randomly sample points from the vector
-    while (sample.size() < sample_size)
+    // Randomly sample points from the vector -> O(sample_size)
+    while (sample.size() < local_sample_size)
     {
         while (true)
         {
@@ -269,15 +288,35 @@ Point* KdTree<Point>::_splitVector(std::vector<Point *> &points, int depth, size
         }
     }
 
-    // Sort the sample along the given axis
+    /** TODO: Alternative sampling method
+     * Alternative sampling method
+    
+    std::vector<Point *> sample = points;
+
+    std::random_shuffle(sample.begin(), sample.end());
+    sample.resize(sample_size);
+
+     * Alternative sampling method
+
+    std::random_device rd;
+    std::mt19937 generator(rd());
+
+    std::vector<T> sample;
+    sample.reserve(sample_size);
+
+    std::sample(points.begin(), points.end(), std::back_inserter(sample),
+                sample_size, generator);
+    */
+
+    // Sort the sample along the given axis -> O(sample_size * log(sample_size))
     std::sort(sample.begin(), sample.end(), [axis](Point * a, Point *b) {
         return (*a)[axis] < (*b)[axis];
     });
 
     // Get the median value of the sample
-    double median = (*sample[sample_size / 2])[axis];
+    double median = (*sample[local_sample_size / 2])[axis];
 
-    // Reorder the vector so that the elements before the median are smaller than the median and the elements after the median are greater than the median
+    // Reorder the vector so that the elements before the median are smaller than the median and the elements after the median are greater than the median -> O(size)
     typename std::vector<Point*>::iterator median_iterator = std::partition(points.begin(), points.end(), [median, axis](Point * a) {
         return (*a)[axis] <= median;
     });
@@ -303,12 +342,22 @@ Point* KdTree<Point>::_splitVector(std::vector<Point *> &points, int depth, size
 
 /**
  * @brief Build the tree
+ * 
  * @param points The points to build the tree from
  * @param node The current node
  * @param depth The current depth
  * @param thread_no The current thread number
  * @param parent The parent of the current node
  * @param right Whether the current node is the right child of its parent
+ *
+*/
+/*
+Time Complexity: O(n logn)
+ -> _splitVector: O(n logn)
+ -> recurvisely call buildTree: O(logn)
+    -> O(n logn + logn) = O(n logn)
+Space Complexity: 
+
 */
 template <class Point>
 void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &node, int depth, int thread_no, KdTreeNode<Point> *parent)
@@ -332,7 +381,7 @@ void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &n
     std::vector<Point*> rightPoints;
 
     // Split the vector into two vectors, using random sampling to determine the median
-    Point *median = this->_splitVector(points, depth, 1000, leftPoints, rightPoints);
+    Point *median = this->_splitVector(points, depth, leftPoints, rightPoints);
 
     points.clear();
 
@@ -350,7 +399,7 @@ void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &n
     node = node_obj;
 
     // Determine whether to spawn a new thread or not
-    if (num_threads_atomic < MAX_THREADS && leftPoints.size() + rightPoints.size() > 100000)
+    if (num_threads_atomic < this->max_num_threads && (leftPoints.size() + rightPoints.size() > this->thread_split_threshold))
     {
         num_threads_atomic++;
 
@@ -387,6 +436,10 @@ KdTree<Point>::~KdTree()
  * @param min Min point
  * @param max Max point
  */
+/*
+Time Complexity: O(d) -> Constant time as the number of dimensions is constant -> O(1)
+Space Complexity: O(1)
+*/
 template <class Point>
 bool KdTree<Point>::inRange(Point *point, Point *min, Point *max)
 {
@@ -406,6 +459,11 @@ bool KdTree<Point>::inRange(Point *point, Point *min, Point *max)
  * 
  * @param node The root of the subtree
  */
+/*
+Time Complexity: O(n)
+Space Complexity: O(n) 
+ - where n is the number of nodes in the subtree
+*/
 template <class Point>
 std::vector<Point*> KdTree<Point>::reportSubtree(KdTreeNode<Point> *node) {
     std::vector<Point*> points;
@@ -428,6 +486,10 @@ std::vector<Point*> KdTree<Point>::reportSubtree(KdTreeNode<Point> *node) {
  * @param max Max point of the range
  * @param kdTreeRange Map with the min and max of each dimension of the kd tree subregion
  */
+/*
+Time complexity: O(dimension) -> Constant time -> O(1)
+Space complexity: O(1) -> Constant space
+*/
 template <class Point>
 bool KdTree<Point>::subregionContained(Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange) {
     // Go through each dimension
@@ -455,6 +517,10 @@ bool KdTree<Point>::subregionContained(Point * min, Point * max, std::map<int, s
  * @param max Max point of the range
  * @param kdTreeRange Map with the min and max of each dimension of the kd tree subregion
  */
+/*
+Time complexity: O(dimension) -> Constant time -> O(1)
+Space complexity: O(1) -> Constant space
+*/
 template <class Point>
 bool KdTree<Point>::subregionIntersects(Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange) {
     
@@ -485,6 +551,21 @@ bool KdTree<Point>::subregionIntersects(Point * min, Point * max, std::map<int, 
  * @param kdTreeRange Range of the subregion of the kd tree currently being explored
  * @param depth Depth of the node in the kd tree
  */
+/*
+Time complexity: Worst Case O(n), Average Case O(log(n)) -> ACHO QUE ISTO ESTÁ CORRETO
+AVERAGE CASE -> "This can be affected by the balancedness of the tree and the distribution of points within the specified range." 
+    "It's important to note that the concept of "average case" can vary depending on the specific application and the characteristics of the input data. 
+    Analyzing the average case complexity often involves considering statistical properties and assumptions about the input distribution."
+        (ChatFDP - 18/05/2023)
+ - inRange: O(dimension) -> Constant time -> O(1)
+ - subregionContained: O(dimension) -> Constant time -> O(1)
+ - subregionIntersects: O(dimension) -> Constant time -> O(1)
+ - rangeSearch: O(n) -> n is the number of nodes in the kd tree -> TODO: Tenho que ver melhor
+ - reportSubtree: O(n) -> n is the number of nodes in the kd tree
+  -> O(dimension) + O(dimension) + O(dimension) + O(n) + O(n) = O(n)
+Space complexity: Worst case O(n), Average case O(log(n)) -> ACHO QUE ISTO ESTÁ CORRETO
+ - reportSubTree: Worst Case O(n)
+*/
 template <class Point>
 std::vector<Point*> KdTree<Point>::rangeSearch(KdTreeNode<Point> *node, Point* min, Point* max, std::map<int, std::pair<double, double>> kdTreeRange, int depth)
 {   
@@ -567,6 +648,11 @@ void KdTree<Point>::print(KdTreeNode<Point> *node, int depth)
  * @param depth Depth of the node in the tree
  * @return std::pair<KdTreeNode<Point>*, int> Pair with the leaf node and its depth
  */
+/*
+Time complexity: O(log(n))
+ - Recursion: O(log(n))
+Space Complexity: O(1)
+*/
 template <class Point>
 std::pair<KdTreeNode<Point> *, int> KdTree<Point>::_traverseTreeToLeaf(KdTreeNode<Point> *node, Point * point, int depth) {
     
@@ -608,6 +694,12 @@ std::pair<KdTreeNode<Point> *, int> KdTree<Point>::_traverseTreeToLeaf(KdTreeNod
  * @param query - the query point
  * @param k - the number of nearest neighbors to return
  * @param cutoff - the node to stop searching at
+*/
+/*
+Time Complexity:
+ - _traverseTreeToLeaf: O(log(n))
+Space Complexity: O(k)
+
 */
 template <class Point>
 std::priority_queue<Point *, std::vector<Point *>, ComparePointsClosestFirst<Point>> KdTree<Point>::kNearestNeighborSearch(KdTreeNode<Point> *node, Point * query, size_t k, KdTreeNode<Point> * cutoff, int depth)
