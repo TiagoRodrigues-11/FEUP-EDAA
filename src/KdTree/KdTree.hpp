@@ -390,6 +390,8 @@ void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &n
 
     std::chrono::duration<double> elapsed_seconds = end - start;
 
+    std::cout << "Splitting time(s):" << elapsed_seconds.count() << std::endl;
+
     // Store the time taken to split
     sort_time[thread_no] += ((double)elapsed_seconds.count());
 
@@ -412,7 +414,6 @@ void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &n
         leftThread.join();
 
         num_threads_atomic--;
-
     }
     else
     {

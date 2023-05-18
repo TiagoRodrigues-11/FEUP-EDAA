@@ -31,24 +31,30 @@ KdTree<FullTrack> createKdTree(string minPopularity, string connString, unsigned
                       "FROM tracks_info "
                       "WHERE popularity >= %s ", minPopularity.c_str());
 
+    auto start = std::chrono::system_clock::now();
+
     pqxx::result r = tx.exec(sql);
+
+    auto end = std::chrono::system_clock::now();
 
     tx.commit();
     
     std::vector<FullTrack *> songs = getVectorFromDbResults(r);
 
+    cout << "Retrieved songs from database in (s):" << std::chrono::duration<double>(end - start).count() << endl << endl;
+
     cout << "Building KdTree with " << songs.size() << " nodes..." << endl << endl;
 
-    auto start = std::chrono::system_clock::now();
+    start = std::chrono::system_clock::now();
 
     // Make a KdTree
     KdTree<FullTrack> tree = KdTree<FullTrack>(songs, numThreads, sampleSize, minPointsToCreateThread);
 
-    auto end = std::chrono::system_clock::now();
+    end = std::chrono::system_clock::now();
 
     std::chrono::duration<double> elapsed_seconds = end - start;
     
-    cout << "Finished in: " << elapsed_seconds.count() << "s" << endl << endl;
+    cout << "Built tree in (s):" << elapsed_seconds.count() << endl << endl;
 
     return tree;
 }
@@ -72,24 +78,30 @@ KdTree<PartialTrack> createKdTree(string minPopularity, string connString, vecto
 
     pqxx::work tx(c);
 
+    auto start = std::chrono::system_clock::now();
+
     pqxx::result r = tx.exec(sql);
+
+    auto end = std::chrono::system_clock::now();
 
     tx.commit();
     
-    std::vector<PartialTrack *> songs = getPartialTrackVectorFromDbResults(r, attributes);
+    std::vector<PartialTrack *> songs = getPartialTrackVectorFromDbResults(r, attributes);    
+
+    cout << "Retrieved songs from database in (s):" << std::chrono::duration<double>(end - start).count() << endl << endl;
 
     cout << "Building KdTree with " << songs.size() << " nodes..." << endl << endl;
 
-    auto start = std::chrono::system_clock::now();
+    start = std::chrono::system_clock::now();
 
     // Make a KdTree
     KdTree<PartialTrack> tree = KdTree<PartialTrack>(songs, numThreads, sampleSize, minPointsToCreateThread);
 
-    auto end = std::chrono::system_clock::now();
+    end = std::chrono::system_clock::now();
 
     std::chrono::duration<double> elapsed_seconds = end - start;
     
-    cout << "Finished in: " << elapsed_seconds.count() << "s" << endl << endl;
+    cout << "Built tree in (s):" << elapsed_seconds.count() << endl << endl;
 
     return tree;
 }
@@ -171,9 +183,14 @@ void useFullTrackKdTree(string minPopularity, string connString, unsigned int nu
                 cout << "Option: ";
                 inputStream >> choice;
 
+                cout << endl;
+
                 if(choice == 1){
+                    auto start = std::chrono::system_clock::now();
                     std::priority_queue<FullTrack *, std::vector<FullTrack *>, ComparePointsClosestFirst<FullTrack>> neighbour = tree.kNearestNeighborSearch(tree.getRoot(), selected, 10);
-                    cout << "Finished searching for nearest neighbours" << endl << endl;
+                    auto end = std::chrono::system_clock::now();
+                    std::chrono::duration<double> elapsed_seconds = end - start;
+                    cout << "Finished searching for nearest neighbours in (s):" << elapsed_seconds.count() << endl << endl;
                     
                     printSong(selected);
 
@@ -318,10 +335,14 @@ void usePartialTrackKdTree(string minPopularity, string connString, unsigned int
                 cout << "3. Exit." << endl;
                 cout << "Option: ";
                 inputStream >> choice;
+                cout << endl;
 
                 if(choice == 1){
+                    auto start = std::chrono::high_resolution_clock::now();
                     std::priority_queue<PartialTrack *, std::vector<PartialTrack *>, ComparePointsClosestFirst<PartialTrack>> neighbour = tree.kNearestNeighborSearch(tree.getRoot(), selected, 10);
-                    cout << "Finished searching for nearest neighbours" << endl << endl;
+                    auto end = std::chrono::high_resolution_clock::now();
+                    std::chrono::duration<double> elapsed = end - start;
+                    cout << "Finished searching for nearest neighbours in (s):" << elapsed.count() << endl << endl;
                     
                     printSong(selected);
 
