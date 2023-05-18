@@ -18,7 +18,7 @@ static inline void rtrim(std::string &s) {
             std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
 }
 
-KdTree<FullTrack> createKdTree(string minPopularity, string connString, unsigned int numThreads, size_t sampleSize, int minPointsToCreateThread){
+KdTree<FullTrack> createKdTree(string minPopularity, string connString, unsigned int numThreads, size_t sampleSize, unsigned int minPointsToCreateThread){
     pqxx::connection c(connString);
     
     cout << "Starting with minimum song popularity " << minPopularity << endl;
@@ -59,7 +59,7 @@ KdTree<FullTrack> createKdTree(string minPopularity, string connString, unsigned
     return tree;
 }
 
-KdTree<PartialTrack> createKdTree(string minPopularity, string connString, vector<string> attributes, unsigned int numThreads, size_t sampleSize, int minPointsToCreateThread){
+KdTree<PartialTrack> createKdTree(string minPopularity, string connString, vector<string> attributes, unsigned int numThreads, size_t sampleSize, unsigned int minPointsToCreateThread){
     pqxx::connection c(connString);
     
     cout << "Starting with minimum song popularity " << minPopularity << endl;
@@ -152,7 +152,7 @@ FullTrack* selectSong(string minPopularity, string connString, istream &inputStr
     }
 }
 
-void useFullTrackKdTree(string minPopularity, string connString, unsigned int numThreads, size_t sampleSize, int minPointsToCreateThread, istream &inputStream){
+void useFullTrackKdTree(string minPopularity, string connString, unsigned int numThreads, size_t sampleSize, unsigned int minPointsToCreateThread, istream &inputStream){
     KdTree<FullTrack> tree = createKdTree(minPopularity, connString, numThreads, sampleSize, minPointsToCreateThread);
 
     int choice;
@@ -293,7 +293,7 @@ PartialTrack* selectSong(string minPopularity, string connString, vector<string>
     }
 }
 
-void usePartialTrackKdTree(string minPopularity, string connString, unsigned int numThreads, size_t sampleSize, int minPointsToCreateThread, istream &inputStream){
+void usePartialTrackKdTree(string minPopularity, string connString, unsigned int numThreads, size_t sampleSize, unsigned int minPointsToCreateThread, istream &inputStream){
     std::vector<std::string> attributes = std::vector<std::string>();
     
     FullTrack min = FullTrack();
@@ -418,7 +418,7 @@ int main(int argc, char* argv[]){
     char *envPath = nullptr;
     unsigned int numThreads = UINT16_MAX;
     size_t sampleSize = 1000;
-    int minPointsToCreateThread = 100000;
+    unsigned int minPointsToCreateThread = 100000;
     bool test = false;
     char *testFilePath = nullptr;
         
@@ -437,7 +437,7 @@ int main(int argc, char* argv[]){
             sampleSize = (size_t) std::stoi(nextArg); 
         }
         else if (std::strcmp(arg, "--ts") == 0) {
-            minPointsToCreateThread = std::stoi(nextArg);
+            minPointsToCreateThread = (unsigned int) std::stoi(nextArg);
         }
         else if (std::strcmp(arg, "--test") == 0) {
             test = true;

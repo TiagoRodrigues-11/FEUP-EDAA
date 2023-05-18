@@ -188,7 +188,7 @@ private:
     KdTreeNode<Point> *root;
     const unsigned int max_num_threads;
     const size_t sample_size;
-    const int thread_split_threshold;
+    const unsigned int thread_split_threshold;
     bool inRange(Point *point, Point *min, Point *max);
     void buildTree(std::vector<Point *> &points, KdTreeNode<Point> *&node, int depth, int thread_no, KdTreeNode<Point> *parent);
     Point* _splitVector(std::vector<Point *> &points, int depth, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints);
@@ -197,8 +197,8 @@ private:
     bool subregionContained(Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange);
     bool subregionIntersects(Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange);
 public:
-    KdTree(unsigned int max_num_threads = MAX_THREADS, size_t sample_size = SAMPLE_SIZE, int thread_split_threshold = THREAD_SPLIT_THRESHOLD);
-    KdTree(std::vector<Point*> &points, unsigned int max_num_threads = MAX_THREADS, size_t sample_size = SAMPLE_SIZE, int thread_split_threshold = THREAD_SPLIT_THRESHOLD);
+    KdTree(unsigned int max_num_threads = MAX_THREADS, size_t sample_size = SAMPLE_SIZE, unsigned int thread_split_threshold = THREAD_SPLIT_THRESHOLD);
+    KdTree(std::vector<Point*> &points, unsigned int max_num_threads = MAX_THREADS, size_t sample_size = SAMPLE_SIZE, unsigned int thread_split_threshold = THREAD_SPLIT_THRESHOLD);
     ~KdTree();
     void print(KdTreeNode<Point> *node, int depth);
     std::vector<Point*> rangeSearch(KdTreeNode<Point> *node, Point * min, Point * max, std::map<int, std::pair<double, double>> kdTreeRange, int depth = 0);
@@ -207,13 +207,13 @@ public:
 };
 
 template <class Point>
-KdTree<Point>::KdTree(unsigned int max_num_threads, size_t sample_size, int thread_split_threshold) : max_num_threads(max_num_threads > MAX_THREADS ? MAX_THREADS : max_num_threads), sample_size(SAMPLE_SIZE), thread_split_threshold(THREAD_SPLIT_THRESHOLD)
+KdTree<Point>::KdTree(unsigned int max_num_threads, size_t sample_size, unsigned int thread_split_threshold) : max_num_threads(max_num_threads > MAX_THREADS ? MAX_THREADS : max_num_threads), sample_size(sample_size > SAMPLE_SIZE ? SAMPLE_SIZE : sample_size), thread_split_threshold(thread_split_threshold > THREAD_SPLIT_THRESHOLD ? THREAD_SPLIT_THRESHOLD : thread_split_threshold)
 {
     this->root = nullptr;
 }
 
 template <class Point>
-KdTree<Point>::KdTree(std::vector<Point*> &points, unsigned int max_num_threads, size_t sample_size, int thread_split_threshold) : max_num_threads(max_num_threads > MAX_THREADS ? MAX_THREADS : max_num_threads), sample_size(SAMPLE_SIZE), thread_split_threshold(THREAD_SPLIT_THRESHOLD){
+KdTree<Point>::KdTree(std::vector<Point*> &points, unsigned int max_num_threads, size_t sample_size, unsigned int thread_split_threshold) : max_num_threads(max_num_threads > MAX_THREADS ? MAX_THREADS : max_num_threads), sample_size(sample_size > SAMPLE_SIZE ? SAMPLE_SIZE : sample_size), thread_split_threshold(thread_split_threshold > THREAD_SPLIT_THRESHOLD ? THREAD_SPLIT_THRESHOLD : thread_split_threshold){
     this->root = nullptr;
 
     this->buildTree(points, this->root, 0, 0, nullptr);
