@@ -240,10 +240,10 @@ KdTree<Point>::KdTree(std::vector<Point*> &points, unsigned int maxNumThreads, s
 */
 /*
 Time Complexity: O(n logn)
- - Random sample: O(sampleSize) -> NAO IMPORTA sampleSize constant
- - Sort: O(n logn)
+ - Random sample: O(sampleSize)
+ - Sort: O(n logn) = O(sampleSize log sampleSize)
  - Partition: O(n)
-    -> O(sampleSize + n logn + n) = O(n logn) -> Epah acho que está certo
+    -> O(sampleSize + sampleSize log sampleSize + n) = O(s log s + n ) -> Epah acho que está certo
 
 Space Complexity: O(n)
  - usedIndices: O(sampleSize)
