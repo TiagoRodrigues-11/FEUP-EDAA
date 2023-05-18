@@ -140,7 +140,7 @@ std::string FullTrack::getDimensionName(int i) {
         case 8:
             return "valence";
         case 9:
-            return "timeSignature";
+            return "time_signature";
         case 10:
             return "mode";
         default:
