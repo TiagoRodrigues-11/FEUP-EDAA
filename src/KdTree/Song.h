@@ -22,7 +22,7 @@ class Song {
 class FullTrack : public Song {
     public:
         FullTrack();
-        FullTrack(std::string name, std::string artist, double acousticness, double danceability, double energy, double instrumentalness, double liveness, double loudness, double speechiness, double tempo, double valence, double time_signature, double mode);
+        FullTrack(std::string name, std::string artist, double acousticness, double danceability, double energy, double instrumentalness, double liveness, double loudness, double speechiness, double tempo, double valence, double timeSignature, double mode);
         ~FullTrack();
         std::string getName();
         std::string getArtist();
@@ -48,7 +48,7 @@ class FullTrack : public Song {
         double speechiness;
         double tempo;
         double valence;
-        double time_signature;
+        double timeSignature;
         double mode;
 };
 
@@ -64,7 +64,6 @@ class PartialTrack : public Song {
         size_t dimensions();
                   
         double operator[] (int i);
-        bool operator== (PartialTrack song);
         void setDimension(int dimension, double value);
         void setDimension(std::string dimension, double value);
         std::string getDimensionName(int dimension);

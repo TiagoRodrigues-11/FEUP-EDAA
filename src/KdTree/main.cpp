@@ -52,9 +52,9 @@ KdTree<FullTrack> createKdTree(string minPopularity, string connString, unsigned
 
     end = std::chrono::system_clock::now();
 
-    std::chrono::duration<double> elapsed_seconds = end - start;
+    std::chrono::duration<double> elapsedSeconds = end - start;
     
-    cout << "Built tree in (s):" << elapsed_seconds.count() << endl << endl;
+    cout << "Built tree in (s):" << elapsedSeconds.count() << endl << endl;
 
     return tree;
 }
@@ -99,9 +99,9 @@ KdTree<PartialTrack> createKdTree(string minPopularity, string connString, vecto
 
     end = std::chrono::system_clock::now();
 
-    std::chrono::duration<double> elapsed_seconds = end - start;
+    std::chrono::duration<double> elapsedSeconds = end - start;
     
-    cout << "Built tree in (s):" << elapsed_seconds.count() << endl << endl;
+    cout << "Built tree in (s):" << elapsedSeconds.count() << endl << endl;
 
     return tree;
 }
@@ -189,8 +189,8 @@ void useFullTrackKdTree(string minPopularity, string connString, unsigned int nu
                     auto start = std::chrono::system_clock::now();
                     std::priority_queue<FullTrack *, std::vector<FullTrack *>, ComparePointsClosestFirst<FullTrack>> neighbour = tree.kNearestNeighborSearch(tree.getRoot(), selected, 10);
                     auto end = std::chrono::system_clock::now();
-                    std::chrono::duration<double> elapsed_seconds = end - start;
-                    cout << "Finished searching for nearest neighbours in (s):" << elapsed_seconds.count() << endl << endl;
+                    std::chrono::duration<double> elapsedSeconds = end - start;
+                    cout << "Finished searching for nearest neighbours in (s):" << elapsedSeconds.count() << endl << endl;
                     
                     printSong(selected);
 
@@ -231,8 +231,8 @@ void useFullTrackKdTree(string minPopularity, string connString, unsigned int nu
             std::vector<FullTrack*> points = tree.rangeSearch(tree.getRoot(), &min, &max, kdTreeRanges, 0);
 
             cout << "Found " << points.size() << " songs matching your search" << endl;
-            int min_size = std::min(20, (int)points.size());
-            for(int i = 0; i < min_size; i++){
+            int minSize = std::min(20, (int)points.size());
+            for(int i = 0; i < minSize; i++){
                 printSong(points[(size_t)i]);
             }
 
@@ -299,11 +299,11 @@ void usePartialTrackKdTree(string minPopularity, string connString, unsigned int
     FullTrack min = FullTrack();
     int dimensions = (int)min.dimensions();
     for (int i = 0; i < dimensions; i++) {
-        string dim_choice;
+        string dimChoice;
         cout << "Use " << min.getDimensionName(i) << "(y/n): ";
-        inputStream >> dim_choice;
+        inputStream >> dimChoice;
 
-        if(dim_choice == "y") attributes.push_back(min.getDimensionName(i));
+        if(dimChoice == "y") attributes.push_back(min.getDimensionName(i));
     }
 
     KdTree<PartialTrack> tree = createKdTree(minPopularity, connString, attributes, numThreads, sampleSize, minPointsToCreateThread);
@@ -362,16 +362,16 @@ void usePartialTrackKdTree(string minPopularity, string connString, unsigned int
                 }
             }
         } else if (choice == 2) {
-            map<string, double> dim_attributes = map<string, double>();
+            map<string, double> dimAttributes = map<string, double>();
             
             for(size_t i = 0; i < attributes.size(); i++){
-                dim_attributes[attributes[i]] = 0;
+                dimAttributes[attributes[i]] = 0;
             }
 
-            PartialTrack min = PartialTrack("", "", dim_attributes);
-            PartialTrack max = PartialTrack("", "", dim_attributes);
+            PartialTrack min = PartialTrack("", "", dimAttributes);
+            PartialTrack max = PartialTrack("", "", dimAttributes);
 
-            int dimensions = (int)dim_attributes.size();
+            int dimensions = (int)dimAttributes.size();
             
             for (int i = 0; i < dimensions; i++) {
                 double minValue, maxValue;
@@ -396,8 +396,8 @@ void usePartialTrackKdTree(string minPopularity, string connString, unsigned int
             std::vector<PartialTrack*> points = tree.rangeSearch(tree.getRoot(), &min, &max, kdTreeRanges, 0);
 
             cout << "Found " << points.size() << " songs matching your search" << endl;
-            int min_size = std::min(20, (int)points.size());
-            for(int i = 0; i < min_size; i++){
+            int minSize = std::min(20, (int)points.size());
+            for(int i = 0; i < minSize; i++){
                 printSong(points[(size_t)i]);
             }
 

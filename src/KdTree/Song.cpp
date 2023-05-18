@@ -12,11 +12,11 @@ FullTrack::FullTrack() {
     this->speechiness = 0;
     this->tempo = 0;
     this->valence = 0;
-    this->time_signature = 0;
+    this->timeSignature = 0;
     this->mode = 0;
 }
 
-FullTrack::FullTrack(std::string name, std::string artist, double acousticness, double danceability, double energy, double instrumentalness, double liveness, double loudness, double speechiness, double tempo, double valence, double time_signature, double mode) {
+FullTrack::FullTrack(std::string name, std::string artist, double acousticness, double danceability, double energy, double instrumentalness, double liveness, double loudness, double speechiness, double tempo, double valence, double timeSignature, double mode) {
     this->name = name;
     this->artist = artist;
     this->acousticness = acousticness;
@@ -28,7 +28,7 @@ FullTrack::FullTrack(std::string name, std::string artist, double acousticness, 
     this->speechiness = speechiness;
     this->tempo = tempo;
     this->valence = valence;
-    this->time_signature = time_signature;
+    this->timeSignature = timeSignature;
     this->mode = mode;
 }
 
@@ -67,7 +67,7 @@ double FullTrack::operator[] (int i) {
         case 8:
             return this->valence;
         case 9:
-            return this->time_signature;
+            return this->timeSignature;
         case 10:
             return this->mode;
         default:
@@ -105,7 +105,7 @@ void FullTrack::setDimension(int dimension, double value) {
             this->valence = value;
             break;
         case 9:
-            this->time_signature = value;
+            this->timeSignature = value;
             break;
         case 10:
             this->mode = value;
@@ -140,7 +140,7 @@ std::string FullTrack::getDimensionName(int i) {
         case 8:
             return "valence";
         case 9:
-            return "time_signature";
+            return "timeSignature";
         case 10:
             return "mode";
         default:
