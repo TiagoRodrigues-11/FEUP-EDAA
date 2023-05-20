@@ -6,7 +6,7 @@ import pandas as pd
 import os
 
 def create_dataframe_from_values(save_csv=False):
-    benchmarking_results = pd.DataFrame(columns=['Sample Size', 'Minimum Points per Thread', 'Number of Threads', 'Popularity', 'Query Time (s)', 'Build Time (s)', 'kNN Time (s)'])
+    benchmarking_results = pd.DataFrame(columns=['Sample Size', 'Minimum Points per Thread', 'Number of Threads', 'Popularity', 'Query Time (s)', 'Build Time (s)', 'kNN Time (s)', 'Number of tracks'])
     path = os.path.join(os.getcwd(), ('src\\KdTree\\KdTree_results.txt'))
     
     with open(path, 'r') as benchmarking_file:
@@ -31,6 +31,19 @@ def create_dataframe_from_values(save_csv=False):
                 data['Minimum Points per Thread'] = [int(min_points)]
                 data['Number of Threads'] = [int(threads)]
                 data['Popularity'] = [int(popularity)]
+                
+                # Values come from running count on the dataset
+                if (int(popularity) == 0):
+                    data['Number of tracks'] = [int(8737156)]
+                elif (int(popularity) == 25):
+                    data['Number of tracks'] = [int(629313)]
+                elif (int(popularity) == 50):
+                    data['Number of tracks'] = [int(77892)]
+                elif (int(popularity) == 70):
+                    data['Number of tracks'] = [int(6920)]
+                elif (int(popularity) == 90):
+                    data['Number of tracks'] = [int(82)]
+                
             elif line.startswith('Retrieved'):
                 data['Query Time (s)'].append(float(line.split(':')[1]))
             elif line.startswith('Built'):
@@ -58,22 +71,43 @@ def create_graph_sample_size_build_time(dataframe, popularity=0):
         plt.show()
         break """
 
-def create_execution_time_according_to_popularity_graph(dataframe, sample_size=50, n_threads=16, min_points=100000):
+def create_execution_time_according_to_number_of_tracks_graph(dataframe, sample_size=50, n_threads=16, min_points=100000):
     values = dataframe[(dataframe['Sample Size'] == sample_size) & (dataframe['Number of Threads'] == n_threads) & (dataframe['Minimum Points per Thread'] == min_points)]
-    print(values.head())
-    # plot graph with popularity as x-axis and query time, build time, and knn time as y-axis
-    values.plot(x='Popularity', y=['Query Time (s)', 'Build Time (s)', 'kNN Time (s)'], kind='bar', color=['red', 'blue', 'green'], label=['Query Time', 'Build Time', 'kNN Time'])
-    plt.xlabel('Popularity')
+    values = values.sort_values('Number of tracks') 
+    # plot graph with number of tracks as x-axis and query time, build time, and knn time as y-axis
+    ax1 = values.plot(x='Number of tracks', y=['Query Time (s)', 'Build Time (s)', 'kNN Time (s)'], kind='bar', color=['red', 'blue', 'green'], label=['Query Time', 'Build Time', 'kNN Time'])
+    plt.xlabel('Number of tracks')
     plt.ylabel('Time (s)')
     plt.title(f'Sample Size: {sample_size}, Number of Threads: {n_threads}, Minimum Points per Thread: {min_points}')
     plt.legend()
 
-    for p in ax.patches:
-        ax.annotate(format(p.get_height(), '.2f'), (p.get_x() + p.get_width() / 2., p.get_height()), ha = 'center', va = 'center', xytext = (0, 10), textcoords = 'offset points')
-        
+    for p in ax1.patches:
+        ax1.annotate(format(p.get_height(), '.5f'), (p.get_x() + p.get_width() / 2., p.get_height()), ha = 'center', va = 'bottom', rotation = 'vertical', xytext = (0, 10), textcoords = 'offset points')
+
+    plt.ylim(top=ax1.get_ylim()[1] * 1.1)
+
+    plt.show()
+
+def create_execution_time_according_to_number_of_threads_graph(dataframe, sample_size=50, min_points=10000, popularity=0):
+    values = dataframe[(dataframe['Sample Size'] == sample_size) & (dataframe['Minimum Points per Thread'] == min_points) & (dataframe['Popularity'] == popularity)]
+    values = values.sort_values('Number of Threads')
+    print(values.head())
+    # plot graph with number of tracks as x-axis and query time, build time, and knn time as y-axis
+    ax1 = values.plot(x='Number of Threads', y='Build Time (s)', kind='bar', color='blue', label='Build Time')
+    plt.xlabel('Number of threads')
+    plt.ylabel('Time (s)')
+    plt.title(f'Sample Size: {sample_size}, Minimum Points per Thread: {min_points}, Popularity: {popularity}')
+    plt.legend()
+
+    for p in ax1.patches:
+        ax1.annotate(format(p.get_height(), '.5f'), (p.get_x() + p.get_width() / 2., p.get_height()), ha = 'center', va = 'bottom', rotation = 'vertical', xytext = (0, 10), textcoords = 'offset points')
+
+    plt.ylim(top=ax1.get_ylim()[1] * 1.1)
+
     plt.show()
 
 
 #print(benchmarking_results.head())
 #create_graph_sample_size_build_time(benchmarking_results)
-create_execution_time_according_to_popularity_graph(benchmarking_results, sample_size=50, n_threads=16, min_points=100000)
+# create_execution_time_according_to_number_of_tracks_graph(benchmarking_results, sample_size=50, n_threads=16, min_points=100000)
+create_execution_time_according_to_number_of_threads_graph(benchmarking_results, sample_size=50, min_points=10000, popularity=0)
