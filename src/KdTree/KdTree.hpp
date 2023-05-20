@@ -20,58 +20,6 @@
 #define MAX_SAMPLE_SIZE 1000000
 #define MAX_THREAD_SPLIT_THRESHOLD 1000000
 
-class ThreadPool {
-public:
-    ThreadPool(size_t numThreads) : stop(false) {
-        for (size_t i = 0; i < numThreads; ++i) {
-            threads.emplace_back([this]() {
-                while (true) {
-                    std::function<void()> task;
-                    {
-                        std::unique_lock<std::mutex> lock(queueMutex);
-                        condition.wait(lock, [this]() {
-                            return stop || !taskQueue.empty();
-                        });
-                        if (stop && taskQueue.empty())
-                            return;
-                        task = std::move(taskQueue.front());
-                        taskQueue.pop();
-                    }
-                    task();
-                }
-            });
-        }
-    }
-
-    ~ThreadPool() {
-        {
-            std::unique_lock<std::mutex> lock(queueMutex);
-            stop = true;
-        }
-        condition.notify_all();
-        for (std::thread& thread : threads) {
-            thread.join();
-        }
-    }
-
-    template <typename Func, typename... Args>
-    void enqueue(Func&& func, Args&&... args) {
-        std::function<void()> task = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
-        {
-            std::unique_lock<std::mutex> lock(queueMutex);
-            taskQueue.emplace(std::move(task));
-        }
-        condition.notify_one();
-    }
-
-private:
-    std::vector<std::thread> threads;
-    std::queue<std::function<void()>> taskQueue;
-    std::mutex queueMutex;
-    std::condition_variable condition;
-    bool stop;
-};
-
 std::atomic<unsigned int> numeThreadsAtomic(0);
 
 double sortTime[16] = {0};
@@ -261,13 +209,13 @@ public:
 };
 
 template <class Point>
-KdTree<Point>::KdTree(unsigned int maxNumThreads, size_t sampleSize, unsigned int threadSplitThreshold) : maxNumThreads(maxNumThreads > MAX_THREADS ? MAX_THREADS : maxNumThreads), sampleSize(sampleSize > MAX_SAMPLE_SIZE ? MAX_SAMPLE_SIZE : sampleSize), threadSplitThreshold(threadSplitThreshold > MAX_THREAD_SPLIT_THRESHOLD ? MAX_THREAD_SPLIT_THRESHOLD : threadSplitThreshold)
+KdTree<Point>::KdTree(unsigned int maxNumThreads, size_t sampleSize, unsigned int threadSplitThreshold) : maxNumThreads(maxNumThreads > MAX_THREADS ? MAX_THREADS : maxNumThreads - 1), sampleSize(sampleSize > MAX_SAMPLE_SIZE ? MAX_SAMPLE_SIZE : sampleSize), threadSplitThreshold(threadSplitThreshold > MAX_THREAD_SPLIT_THRESHOLD ? MAX_THREAD_SPLIT_THRESHOLD : threadSplitThreshold)
 {
     this->root = nullptr;
 }
 
 template <class Point>
-KdTree<Point>::KdTree(std::vector<Point*> &points, unsigned int maxNumThreads, size_t sampleSize, unsigned int threadSplitThreshold) : maxNumThreads(maxNumThreads > MAX_THREADS ? MAX_THREADS : maxNumThreads), sampleSize(sampleSize > MAX_SAMPLE_SIZE ? MAX_SAMPLE_SIZE : sampleSize), threadSplitThreshold(threadSplitThreshold > MAX_THREAD_SPLIT_THRESHOLD ? MAX_THREAD_SPLIT_THRESHOLD : threadSplitThreshold){
+KdTree<Point>::KdTree(std::vector<Point*> &points, unsigned int maxNumThreads, size_t sampleSize, unsigned int threadSplitThreshold) : maxNumThreads(maxNumThreads > MAX_THREADS ? MAX_THREADS : maxNumThreads - 1), sampleSize(sampleSize > MAX_SAMPLE_SIZE ? MAX_SAMPLE_SIZE : sampleSize), threadSplitThreshold(threadSplitThreshold > MAX_THREAD_SPLIT_THRESHOLD ? MAX_THREAD_SPLIT_THRESHOLD : threadSplitThreshold){
     this->root = nullptr;
 
     this->buildTree(points, this->root, 0, 0, nullptr);
