@@ -243,7 +243,9 @@ Time Complexity: O(n logn)
  - Random sample: O(sampleSize)
  - Sort: O(n logn) = O(sampleSize log sampleSize)
  - Partition: O(n)
-    -> O(sampleSize + sampleSize log sampleSize + n) = O(s log s + n ) -> Epah acho que está certo
+ - Finding median: O(n)
+    -> O(sampleSize + sampleSize log sampleSize + n + n) = O(s log s + n + n)
+    -> sampleSize = 50 => O(50 log 50 + n + n) = O(n + n) = O(n)
 
 Space Complexity: O(n)
  - usedIndices: O(sampleSize)
@@ -287,26 +289,6 @@ Point* KdTree<Point>::splitVector(std::vector<Point *> &points, int depth, std::
             }
         }
     }
-
-    /** TODO: Alternative sampling method
-     * Alternative sampling method
-    
-    std::vector<Point *> sample = points;
-
-    std::random_shuffle(sample.begin(), sample.end());
-    sample.resize(sampleSize);
-
-     * Alternative sampling method
-
-    std::random_device rd;
-    std::mt19937 generator(rd());
-
-    std::vector<T> sample;
-    sample.reserve(sampleSize);
-
-    std::sample(points.begin(), points.end(), std::back_inserter(sample),
-                sampleSize, generator);
-    */
 
     // Sort the sample along the given axis -> O(sampleSize * log(sampleSize))
     std::sort(sample.begin(), sample.end(), [axis](Point * a, Point *b) {
@@ -353,23 +335,22 @@ Point* KdTree<Point>::splitVector(std::vector<Point *> &points, int depth, std::
 */
 /*
 Time Complexity: O(n logn)
- -> splitVector: O(n logn)
+ -> splitVector: O(n)
  -> recurvisely call buildTree: O(logn)
-    -> O(n logn + logn) = O(n logn)
+    -> O(n log n)
 Space Complexity: 
 
 */
 template <class Point>
 void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &node, int depth, int threadNo, KdTreeNode<Point> *parent)
 {    
-    // Case: reached the leaf 
-    if (points.size() == 1)
+    if (points.size() == 1) // Case: reached the leaf 
     {
         KdTreeNode<Point> * nodeObj = new KdTreeNode<Point>(points[0], parent);
         node = nodeObj;
         return;
     }
-    else if (points.empty())
+    else if (points.empty()) // Case: no points
     {
         return;
     }
