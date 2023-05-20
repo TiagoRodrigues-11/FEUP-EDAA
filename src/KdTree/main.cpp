@@ -10,13 +10,9 @@
 #include <pqxx/pqxx>
 #include "utils.h"
 
-using namespace std;
+#define KNN 14
 
-// trim from end (in place)
-static inline void rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(),
-            std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
-}
+using namespace std;
 
 KdTree<FullTrack> createKdTree(string minPopularity, string connString, unsigned int numThreads, size_t sampleSize, unsigned int minPointsToCreateThread){
     pqxx::connection c(connString);
@@ -109,14 +105,7 @@ KdTree<PartialTrack> createKdTree(string minPopularity, string connString, vecto
 FullTrack* selectSong(string minPopularity, string connString, istream &inputStream){
     pqxx::connection c(connString);
     
-    string name;
-
-    cout << "Please enter the name of the song you would like to search for: " << endl;
-    cout << "Name: ";
-    std::getline(inputStream >> std::ws, name);
-
-    // Remove trailing whitespace
-    rtrim(name);
+    string name = getSongName(inputStream);
 
     char sql[1024] = {0};
     snprintf(sql, 1023, "SELECT name, artist_names, acousticness, danceability, energy, instrumentalness, liveness, loudness, speechiness, tempo, valence, time_signature, mode " 
@@ -156,14 +145,7 @@ FullTrack* selectSong(string minPopularity, string connString, istream &inputStr
 void useFullTrackKdTree(string minPopularity, string connString, unsigned int numThreads, size_t sampleSize, unsigned int minPointsToCreateThread, istream &inputStream){
     KdTree<FullTrack> tree = createKdTree(minPopularity, connString, numThreads, sampleSize, minPointsToCreateThread);
 
-    int choice;
-    cout << "What would you like to do?" << endl;
-    cout << "1. Select a song" << endl;
-    cout << "2. Range search" << endl;
-    cout << "3. Exit" << endl;
-    cout << "Option: ";
-    inputStream >> choice;
-    cout << endl;
+    int choice = getAlgorithmChoice(inputStream);
 
     bool exit = false;
     while(!exit){
@@ -189,16 +171,17 @@ void useFullTrackKdTree(string minPopularity, string connString, unsigned int nu
 
                 if(choice == 1){
                     auto start = std::chrono::system_clock::now();
-                    std::priority_queue<FullTrack *, std::vector<FullTrack *>, ComparePointsClosestFirst<FullTrack>> neighbour = tree.kNearestNeighborSearch(tree.getRoot(), selected, 10);
+                    std::priority_queue<FullTrack *, std::vector<FullTrack *>, ComparePointsClosestFirst<FullTrack>> neighbour = tree.kNearestNeighborSearch(tree.getRoot(), selected, KNN);
                     auto end = std::chrono::system_clock::now();
                     std::chrono::duration<double> elapsedSeconds = end - start;
                     cout << "Finished searching for nearest neighbours in (s):" << elapsedSeconds.count() << endl << endl;
                     
-                    printSong(selected);
+                    // Remove the selected song from the queue
+                    neighbour.pop();
 
-                    while(!neighbour.empty()) {
-                        getDistance(selected, neighbour.top());
-                        printSong(neighbour.top());
+                    for(int i = 1; i < KNN; i++) {
+                        double dist = distance(*selected, *(neighbour.top()));
+                        cout << i << ". " << neighbour.top()->getName() << " - " << neighbour.top()->getArtist() << " (" << dist << ")" << endl;
                         neighbour.pop();
                     }
 
@@ -248,14 +231,7 @@ void useFullTrackKdTree(string minPopularity, string connString, unsigned int nu
 PartialTrack* selectSong(string minPopularity, string connString, vector<string> attributes, istream &inputStream){
     pqxx::connection c(connString);
     
-    string name;
-
-    cout << "Please enter the name of the song you would like to search for: " << endl;
-    cout << "Name: ";
-    std::getline(std::cin >> std::ws, name);
-
-    // Remove trailing whitespace
-    rtrim(name);
+    string name = getSongName(inputStream);
 
     string inst = "SELECT name, artist_names";
 
@@ -343,18 +319,19 @@ void usePartialTrackKdTree(string minPopularity, string connString, unsigned int
 
                 if(choice == 1){
                     auto start = std::chrono::high_resolution_clock::now();
-                    std::priority_queue<PartialTrack *, std::vector<PartialTrack *>, ComparePointsClosestFirst<PartialTrack>> neighbour = tree.kNearestNeighborSearch(tree.getRoot(), selected, 10);
+                    std::priority_queue<PartialTrack *, std::vector<PartialTrack *>, ComparePointsClosestFirst<PartialTrack>> neighbour = tree.kNearestNeighborSearch(tree.getRoot(), selected, KNN);
                     auto end = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<double> elapsed = end - start;
                     cout << "Finished searching for nearest neighbours in (s):" << elapsed.count() << endl << endl;
-                    
-                    printSong(selected);
 
-                    while(!neighbour.empty()) {
-                        getDistance(selected, neighbour.top());
-                        printSong(neighbour.top());
+                    // Remove the selected song from the queue
+                    /* neighbour.pop();
+
+                    for(int i = 1; i < KNN; i++) {
+                        double distance = distance(*selected, *(neighbour.top()));
+                        cout << i << ". " << neighbour.top()->getName() << " - " << neighbour.top()->getArtist() << " (" << distance << ")" << endl;
                         neighbour.pop();
-                    }
+                    } */
 
                     exit = true;
                     break;

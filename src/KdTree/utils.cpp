@@ -15,6 +15,9 @@ void printSong(Song *song) {
     std::cout << std::endl;
 }
 
+/**
+ * @brief Calculate the distance between two songs
+*/
 double distance(Song &point1, Song &point2)
 {
     double sum = 0;
@@ -109,4 +112,37 @@ vector<PartialTrack *> getPartialTrackVectorFromDbResults(pqxx::result r, vector
     }
     songs.shrink_to_fit();
     return songs;
+}
+
+int getAlgorithmChoice(istream &inputStream){
+    int choice;
+    cout << "What would you like to do?" << endl;
+    cout << "1. Select a song" << endl;
+    cout << "2. Range search" << endl;
+    cout << "3. Exit" << endl;
+    cout << "Option: ";
+    inputStream >> choice;
+    cout << endl;
+
+    return choice;
+}
+
+/**
+ * @brief Trim from end (in place)
+*/
+static inline void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(),
+            std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+}
+
+string getSongName(istream &inputStream){
+    string name;
+    cout << "Please enter the name of the song you would like to search for: " << endl;
+    cout << "Name: ";
+    std::getline(inputStream >> std::ws, name);
+
+    // Remove trailing whitespace
+    rtrim(name);
+
+    return name;
 }

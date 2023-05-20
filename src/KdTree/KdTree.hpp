@@ -15,8 +15,8 @@
 #include <map>
 
 #define MAX_THREADS std::thread::hardware_concurrency() - 1
-#define SAMPLE_SIZE 1000
-#define THREAD_SPLIT_THRESHOLD 10000
+#define SAMPLE_SIZE 1000000
+#define THREAD_SPLIT_THRESHOLD 1000000
 
 std::atomic<unsigned int> numeThreadsAtomic(0);
 
@@ -382,6 +382,7 @@ void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &n
     // Determine whether to spawn a new thread or not
     if (numeThreadsAtomic < this->maxNumThreads && (leftPoints.size() + rightPoints.size() > this->threadSplitThreshold))
     {
+        std::cout << "Create thread: " << numeThreadsAtomic + 1 << std::endl;
         numeThreadsAtomic++;
 
         // Use thread to build left subtree
