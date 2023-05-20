@@ -10,3 +10,4 @@ KdTree/*.cmake
 **.env
 KdTree/out
 KdTree/KdTree_results.txt
+KdTree/KdTree_output.txt

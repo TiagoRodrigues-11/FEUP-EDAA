@@ -147,6 +147,7 @@ FullTrack* selectSong(string minPopularity, string connString, istream &inputStr
         cout << "Option: ";
         size_t choice;
         inputStream >> choice;
+        cout << endl;
         if(choice == songs.size()) return nullptr;
         return songs[choice];
     }
@@ -162,6 +163,7 @@ void useFullTrackKdTree(string minPopularity, string connString, unsigned int nu
     cout << "3. Exit" << endl;
     cout << "Option: ";
     inputStream >> choice;
+    cout << endl;
 
     bool exit = false;
     while(!exit){
@@ -288,6 +290,7 @@ PartialTrack* selectSong(string minPopularity, string connString, vector<string>
         cout << "Option: ";
         size_t choice;
         inputStream >> choice;
+        cout << endl;
         if(choice == songs.size()) return nullptr;
         return songs[choice];
     }
@@ -315,6 +318,7 @@ void usePartialTrackKdTree(string minPopularity, string connString, unsigned int
     cout << "3. Exit" << endl;
     cout << "Option: ";
     inputStream >> choice;
+    cout << endl;
 
     bool exit = false;
     while(!exit){
@@ -464,6 +468,7 @@ int main(int argc, char* argv[]){
     cout << "Option: ";
     if (test) inputStream >> choice;
     else cin >> choice;
+    cout << endl;
 
     switch(choice) {
         case 1:
