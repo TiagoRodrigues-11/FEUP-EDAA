@@ -70,8 +70,6 @@ KdTree<PartialTrack> createKdTree(string minPopularity, string connString, vecto
     
     snprintf(sql, 1023,"%s FROM tracks_info WHERE popularity >= %s ", inst.c_str(), minPopularity.c_str());
 
-    cout << sql << endl;
-
     pqxx::work tx(c);
 
     auto start = std::chrono::system_clock::now();
@@ -203,8 +201,10 @@ void useFullTrackKdTree(string minPopularity, string connString, unsigned int nu
                 double minValue, maxValue;
                 cout << "Please enter the minimum value for " << min.getDimensionName(i) << ": ";
                 inputStream >> minValue;
+                cout << endl;
                 cout << "Please enter the maximum value for " << min.getDimensionName(i) << ": ";
                 inputStream >> maxValue;
+                cout << endl;
                 min.setDimension(i, minValue);
                 max.setDimension(i, maxValue);
             }
@@ -213,12 +213,21 @@ void useFullTrackKdTree(string minPopularity, string connString, unsigned int nu
             for(int i = 0; i < dimesions; i++){
                 kdTreeRanges[i] = std::pair<double, double>(std::numeric_limits<double>::min(), std::numeric_limits<double>::max());
             }
+
+            auto start = std::chrono::system_clock::now();
+
             std::vector<FullTrack*> points = tree.rangeSearch(tree.getRoot(), &min, &max, kdTreeRanges, 0);
 
-            cout << "Found " << points.size() << " songs matching your search" << endl;
-            int minSize = std::min(20, (int)points.size());
-            for(int i = 0; i < minSize; i++){
-                printSong(points[(size_t)i]);
+            auto end = std::chrono::system_clock::now();
+
+            std::chrono::duration<double> elapsedSeconds = end - start;
+
+            cout << "Finished searching for range in (s):" << elapsedSeconds.count() << endl << endl;
+
+            cout << endl << "Found " << points.size() << " songs matching your search:" << endl;
+            int minSize = std::min(13, (int)points.size());
+            for(int i = 1; i <= minSize; i++){
+                cout << i << ". " << points[i]->getName() << " - " << points[i]->getArtist() << endl;
             }
 
             return;
@@ -325,13 +334,13 @@ void usePartialTrackKdTree(string minPopularity, string connString, unsigned int
                     cout << "Finished searching for nearest neighbours in (s):" << elapsed.count() << endl << endl;
 
                     // Remove the selected song from the queue
-                    /* neighbour.pop();
+                    neighbour.pop();
 
                     for(int i = 1; i < KNN; i++) {
-                        double distance = distance(*selected, *(neighbour.top()));
-                        cout << i << ". " << neighbour.top()->getName() << " - " << neighbour.top()->getArtist() << " (" << distance << ")" << endl;
+                        double dist = distance(*selected, *(neighbour.top()));
+                        cout << i << ". " << neighbour.top()->getName() << " - " << neighbour.top()->getArtist() << " (" << dist << ")" << endl;
                         neighbour.pop();
-                    } */
+                    }
 
                     exit = true;
                     break;
@@ -365,8 +374,6 @@ void usePartialTrackKdTree(string minPopularity, string connString, unsigned int
                 min.setDimension(i, minValue);
                 max.setDimension(i, maxValue);
             }
-            printSong(&min);
-            printSong(&max);
             
             std::map<int, std::pair<double, double>> kdTreeRanges;
 
@@ -376,10 +383,10 @@ void usePartialTrackKdTree(string minPopularity, string connString, unsigned int
             
             std::vector<PartialTrack*> points = tree.rangeSearch(tree.getRoot(), &min, &max, kdTreeRanges, 0);
 
-            cout << "Found " << points.size() << " songs matching your search" << endl;
-            int minSize = std::min(20, (int)points.size());
-            for(int i = 0; i < minSize; i++){
-                printSong(points[(size_t)i]);
+            cout << endl << "Found " << points.size() << " songs matching your search:" << endl;
+            int minSize = std::min(13, (int)points.size());
+            for(int i = 1; i <= minSize; i++){
+                cout << i << ". " << points[i]->getName() << " - " << points[i]->getArtist() << endl;
             }
 
             return;

@@ -22,8 +22,6 @@
 
 std::atomic<unsigned int> numeThreadsAtomic(0);
 
-double sortTime[16] = {0};
-
 /**
  * @brief Class used to sort priority queue by distance with the closest point first
  */
@@ -219,16 +217,6 @@ KdTree<Point>::KdTree(std::vector<Point*> &points, unsigned int maxNumThreads, s
     this->root = nullptr;
 
     this->buildTree(points, this->root, 0, 0, nullptr);
-
-    std::cout << "Number of threads: " << numeThreadsAtomic << std::endl;
-
-    for (size_t i = 0; i <= this->maxNumThreads; i++)
-    {
-        if(sortTime[i] != 0) {
-            std::cout << "Thread " << i << " sort time: " << sortTime[i] << std::endl;
-        }
-    }
-    
 }
 
 /**
@@ -356,9 +344,6 @@ void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &n
     {
         return;
     }
-    
-    // Start clock for thread
-    auto start = std::chrono::system_clock::now();
 
     std::vector<Point*> leftPoints;
     std::vector<Point*> rightPoints;
@@ -367,14 +352,6 @@ void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &n
     Point *median = this->splitVector(points, depth, leftPoints, rightPoints);
 
     points.clear();
-
-    // End clock for thread
-    auto end = std::chrono::system_clock::now();
-
-    std::chrono::duration<double> elapsedSeconds = end - start;
-
-    // Store the time taken to split
-    sortTime[threadNo] += ((double)elapsedSeconds.count());
 
     // Create the new node and set it as the parent's child
     KdTreeNode<Point> * nodeObj = new KdTreeNode<Point>(median, parent);

@@ -1,0 +1,51 @@
+TEST 0 50 16 100000 range_search_test_input.lf
+Retrieved songs from database in (s):31.4488
+Built tree in (s):21.9298
+Finished searching for range in (s):9.57403
+Retrieved songs from database in (s):31.0928
+Built tree in (s):22.4763
+Finished searching for range in (s):9.83771
+Retrieved songs from database in (s):34.2892
+Built tree in (s):22.3635
+Finished searching for range in (s):9.78956
+TEST 25 50 16 100000 range_search_test_input.lf
+Retrieved songs from database in (s):14.6725
+Built tree in (s):1.12625
+Finished searching for range in (s):0.593784
+Retrieved songs from database in (s):3.85461
+Built tree in (s):1.1957
+Finished searching for range in (s):0.574989
+Retrieved songs from database in (s):3.79533
+Built tree in (s):1.13394
+Finished searching for range in (s):0.590546
+TEST 50 50 16 100000 range_search_test_input.lf
+Retrieved songs from database in (s):0.390131
+Built tree in (s):0.0961075
+Finished searching for range in (s):0.0619178
+Retrieved songs from database in (s):0.292102
+Built tree in (s):0.101909
+Finished searching for range in (s):0.0621806
+Retrieved songs from database in (s):0.272225
+Built tree in (s):0.0964975
+Finished searching for range in (s):0.0611017
+TEST 70 50 16 100000 range_search_test_input.lf
+Retrieved songs from database in (s):0.0532099
+Built tree in (s):0.0091548
+Finished searching for range in (s):0.00523257
+Retrieved songs from database in (s):0.028946
+Built tree in (s):0.00911963
+Finished searching for range in (s):0.00538844
+Retrieved songs from database in (s):0.0286462
+Built tree in (s):0.00902468
+Finished searching for range in (s):0.00556998
+TEST 90 50 16 100000 range_search_test_input.lf
+Retrieved songs from database in (s):0.00303228
+Built tree in (s):0.000307998
+Finished searching for range in (s):7.1785e-05
+Retrieved songs from database in (s):0.00238959
+Built tree in (s):0.000291716
+Finished searching for range in (s):6.8819e-05
+Retrieved songs from database in (s):0.00211648
+Built tree in (s):0.000284192
+Finished searching for range in (s):7.0843e-05
+TEST
