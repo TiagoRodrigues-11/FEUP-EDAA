@@ -72,8 +72,6 @@ private:
     bool stop;
 };
 
-std::atomic<unsigned int> numeThreadsAtomic(0);
-
 double sortTime[16] = {0};
 
 /**
@@ -243,6 +241,7 @@ private:
     const unsigned int maxNumThreads;
     const size_t sampleSize;
     const unsigned int threadSplitThreshold;
+    ThreadPool* threadPool;
     bool inRange(Point *point, Point *min, Point *max);
     void buildTree(std::vector<Point *> &points, KdTreeNode<Point> *&node, int depth, int threadNo, KdTreeNode<Point> *parent);
     Point* splitVector(std::vector<Point *> &points, int depth, std::vector<Point *> &leftPoints, std::vector<Point *> &rightPoints);
@@ -264,23 +263,15 @@ template <class Point>
 KdTree<Point>::KdTree(unsigned int maxNumThreads, size_t sampleSize, unsigned int threadSplitThreshold) : maxNumThreads(maxNumThreads > MAX_THREADS ? MAX_THREADS : maxNumThreads), sampleSize(sampleSize > MAX_SAMPLE_SIZE ? MAX_SAMPLE_SIZE : sampleSize), threadSplitThreshold(threadSplitThreshold > MAX_THREAD_SPLIT_THRESHOLD ? MAX_THREAD_SPLIT_THRESHOLD : threadSplitThreshold)
 {
     this->root = nullptr;
+    this->threadPool = new ThreadPool(maxNumThreads - 1 > MAX_THREADS ? MAX_THREADS: maxNumThreads - 1);
 }
 
 template <class Point>
 KdTree<Point>::KdTree(std::vector<Point*> &points, unsigned int maxNumThreads, size_t sampleSize, unsigned int threadSplitThreshold) : maxNumThreads(maxNumThreads > MAX_THREADS ? MAX_THREADS : maxNumThreads), sampleSize(sampleSize > MAX_SAMPLE_SIZE ? MAX_SAMPLE_SIZE : sampleSize), threadSplitThreshold(threadSplitThreshold > MAX_THREAD_SPLIT_THRESHOLD ? MAX_THREAD_SPLIT_THRESHOLD : threadSplitThreshold){
     this->root = nullptr;
+    this->threadPool = new ThreadPool(maxNumThreads - 1 > MAX_THREADS ? MAX_THREADS : maxNumThreads - 1);
 
-    this->buildTree(points, this->root, 0, 0, nullptr);
-
-    std::cout << "Number of threads: " << numeThreadsAtomic << std::endl;
-
-    for (size_t i = 0; i <= this->maxNumThreads; i++)
-    {
-        if(sortTime[i] != 0) {
-            std::cout << "Thread " << i << " sort time: " << sortTime[i] << std::endl;
-        }
-    }
-    
+    this->buildTree(points, this->root, 0, 0, nullptr);    
 }
 
 /**
@@ -434,19 +425,13 @@ void KdTree<Point>::buildTree(std::vector<Point*> &points, KdTreeNode<Point>* &n
     node = nodeObj;
 
     // Determine whether to spawn a new thread or not
-    if (numeThreadsAtomic < this->maxNumThreads && (leftPoints.size() + rightPoints.size() > this->threadSplitThreshold))
+    if (maxNumThreads > 1 && (leftPoints.size() + rightPoints.size() > this->threadSplitThreshold))
     {
-        numeThreadsAtomic++;
-
         // Use thread to build left subtree
-        std::thread leftThread(&KdTree<Point>::buildTree, this, std::ref(leftPoints), std::ref(node->left), depth + 1, threadNo + 1, node);
+        this->threadPool->enqueue(&KdTree<Point>::buildTree, this, std::ref(leftPoints), std::ref(node->left), depth + 1, threadNo + 1, node);
         
         // Build right subtree in current thread
         this->buildTree(rightPoints, std::ref(node->right), depth + 1, threadNo, node);
-
-        leftThread.join();
-
-        numeThreadsAtomic--;
     }
     else
     {
