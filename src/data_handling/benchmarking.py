@@ -144,7 +144,7 @@ def create_knn_size_sample_size_graph(dataframe, n_threads=16, min_points=100000
 
 #print(benchmarking_results.head())
 #create_graph_sample_size_build_time(benchmarking_results)
-create_execution_time_according_to_number_of_tracks_graph(benchmarking_results, range_search_results, sample_size=50, n_threads=16, min_points=100000)
+#create_execution_time_according_to_number_of_tracks_graph(benchmarking_results, range_search_results, sample_size=50, n_threads=16, min_points=100000)
 #create_execution_time_according_to_number_of_threads_graph(benchmarking_results, sample_size=50, min_points=10000, popularity=0)
 #create_execution_time_according_to_number_of_tracks_graph_range_search(range_search_results, sample_size=50, n_threads=16, min_points=100000)
-#create_knn_size_sample_size_graph(benchmarking_results, n_threads=16, min_points=100000, popularity=0)
+create_knn_size_sample_size_graph(benchmarking_results, n_threads=16, min_points=100000, popularity=0)
