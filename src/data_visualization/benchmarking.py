@@ -61,8 +61,8 @@ def create_dataframe_from_values(save_csv=False, path=os.path.join(os.getcwd(), 
         benchmarking_results.to_csv('src\\data_handling\\' + path.split('\\')[-1][:-3] + 'csv', index=False)
     return benchmarking_results
 
-benchmarking_results = create_dataframe_from_values(save_csv=True)
-range_search_results = create_dataframe_from_values(path=os.path.join(os.getcwd(), ('src\\KdTree\\KdTree_range_results.txt')), save_csv=True)
+benchmarking_results = create_dataframe_from_values()
+range_search_results = create_dataframe_from_values(path=os.path.join(os.getcwd(), ('src\\KdTree\\KdTree_range_results.txt')))
 
 def create_execution_time_according_to_number_of_tracks_graph(knn_dataframe, range_dataframe, sample_size=50, n_threads=16, min_points=100000):
     knn_values = knn_dataframe[(knn_dataframe['Sample Size'] == sample_size) & (knn_dataframe['Number of Threads'] == n_threads) & (knn_dataframe['Minimum Points per Thread'] == min_points)]
@@ -147,4 +147,4 @@ def create_knn_size_sample_size_graph(dataframe, n_threads=16, min_points=100000
 #create_execution_time_according_to_number_of_tracks_graph(benchmarking_results, range_search_results, sample_size=50, n_threads=16, min_points=100000)
 #create_execution_time_according_to_number_of_threads_graph(benchmarking_results, sample_size=50, min_points=10000, popularity=0)
 #create_execution_time_according_to_number_of_tracks_graph_range_search(range_search_results, sample_size=50, n_threads=16, min_points=100000)
-create_knn_size_sample_size_graph(benchmarking_results, n_threads=16, min_points=100000, popularity=0)
+create_knn_size_sample_size_graph(benchmarking_results, n_threads=16, min_points=400000, popularity=0)
