@@ -39,12 +39,26 @@ def create_dataframe_from_values(save_csv=False, path=os.path.join(os.getcwd(), 
                 # Values come from running count on the dataset
                 if (int(popularity) == 0):
                     data['Number of tracks'] = [int(8737156)]
+                elif (int(popularity) == 1):
+                    data['Number of tracks'] = [int(4761069)]
+                elif (int(popularity) == 10):
+                    data['Number of tracks'] = [int(1899485)]
+                elif (int(popularity) == 20):
+                    data['Number of tracks'] = [int(911381)]
                 elif (int(popularity) == 25):
                     data['Number of tracks'] = [int(629313)]
+                elif (int(popularity) == 30):
+                    data['Number of tracks'] = [int(437260)]
+                elif (int(popularity) == 40):
+                    data['Number of tracks'] = [int(196837)]
                 elif (int(popularity) == 50):
                     data['Number of tracks'] = [int(77892)]
+                elif (int(popularity) == 60):
+                    data['Number of tracks'] = [int(26519)]
                 elif (int(popularity) == 70):
                     data['Number of tracks'] = [int(6920)]
+                elif (int(popularity) == 80):
+                    data['Number of tracks'] = [int(1069)]
                 elif (int(popularity) == 90):
                     data['Number of tracks'] = [int(82)]
                 
@@ -58,11 +72,13 @@ def create_dataframe_from_values(save_csv=False, path=os.path.join(os.getcwd(), 
                 data['Range Search Time (s)'].append(float(line.split(':')[1]))
     
     if(save_csv):
-        benchmarking_results.to_csv('src\\data_handling\\' + path.split('\\')[-1][:-3] + 'csv', index=False)
+        benchmarking_results.to_csv('src\\data_visualization\\' + path.split('\\')[-1][:-3] + 'csv', index=False)
     return benchmarking_results
 
 benchmarking_results = create_dataframe_from_values()
 range_search_results = create_dataframe_from_values(path=os.path.join(os.getcwd(), ('src\\KdTree\\KdTree_range_results.txt')))
+build_time_complexity_results = create_dataframe_from_values(path=os.path.join(os.getcwd(), ('src\\KdTree\\KdTree_build_time_complexity_results.txt')))
+other_sample_size_results = create_dataframe_from_values(path=os.path.join(os.getcwd(), ('src\\KdTree\\KdTree_other_sample_size_results.txt')))
 
 def create_execution_time_according_to_number_of_tracks_graph(knn_dataframe, range_dataframe, sample_size=50, n_threads=16, min_points=100000):
     knn_values = knn_dataframe[(knn_dataframe['Sample Size'] == sample_size) & (knn_dataframe['Number of Threads'] == n_threads) & (knn_dataframe['Minimum Points per Thread'] == min_points)]
@@ -175,7 +191,7 @@ def create_thread_split_threshold_runtime_graph(dataframe, sample_size=50, popul
 
     plt.show()
 
-def create_graph_compare_build_time_with_complexity(dataframe, sample_size=50, n_threads=1, min_points=10000):
+def create_graph_compare_build_time_with_complexity(dataframe, sample_size=50, n_threads=1, min_points=100000):
     values = dataframe[(dataframe['Sample Size'] == sample_size) & (dataframe['Number of Threads'] == n_threads) & (dataframe['Minimum Points per Thread'] == min_points)]
     values = values.sort_values('Number of tracks')
     # plot graph with number of tracks as x-axis and build time as y-axis as points
@@ -187,13 +203,6 @@ def create_graph_compare_build_time_with_complexity(dataframe, sample_size=50, n
 
     for p in ax1.patches:
         ax1.annotate(format(p.get_height(), '.5f'), (p.get_x() + p.get_width() / 2., p.get_height()), ha = 'center', va = 'bottom', rotation = 'vertical', xytext = (0, 10), textcoords = 'offset points')
-    
-    # Fake Data
-    x = np.linspace(0, 8700000, 1000)
-    y = x * np.log(x) / 8700000
-    plt.plot(x, y, "--", color='red', label='O(nlogn)')
-    plt.legend()
-
 
     plt.ylim(top=ax1.get_ylim()[1] * 1.1)
 
@@ -218,11 +227,29 @@ def create_knn_time_graph(dataframe, sample_size=50, n_threads=1, min_point=1000
 
     plt.show()
 
+def create_graph_sample_size_knn_time(dataframe, n_threads=1, min_point=100000, popularity=0):
+    values = dataframe[(dataframe['Number of Threads'] == n_threads) & (dataframe['Minimum Points per Thread'] == min_point) & (dataframe['Popularity'] == popularity)]
+    values = values.sort_values('Sample Size')
+    # plot graph with sample size as x-axis and knn time as y-axis
+    ax1 = values.plot(x='Sample Size', y='kNN Time (s)', kind='bar', color='green', label='kNN Time')
+    plt.xlabel('Sample Size')
+    plt.ylabel('kNN Time (s)')
+    plt.title(f'Number of Threads: {n_threads}, Minimum Points per Thread: {min_point}, Popularity: {popularity}')
+    plt.legend()
+
+    for p in ax1.patches:
+        ax1.annotate(format(p.get_height(), '.5f'), (p.get_x() + p.get_width() / 2., p.get_height()), ha='center', va='bottom', rotation='vertical', xytext=(0, 10), textcoords='offset points')
+
+    plt.ylim(top=ax1.get_ylim()[1] * 1.1)
+
+    plt.show()
+
 
 #print(benchmarking_results.head())
-#create_graph_sample_size_build_time(benchmarking_results)
+create_graph_sample_size_knn_time(other_sample_size_results, n_threads=4, min_point=50000, popularity=0)
 #create_execution_time_according_to_number_of_tracks_graph(benchmarking_results, range_search_results, sample_size=50, n_threads=16, min_points=100000)
 #create_execution_time_according_to_number_of_threads_graph(benchmarking_results, sample_size=50, min_points=10000, popularity=0)
 #create_execution_time_according_to_number_of_tracks_graph_range_search(range_search_results, sample_size=50, n_threads=16, min_points=100000)
 #create_knn_size_sample_size_graph(benchmarking_results, n_threads=4, min_points=50000, popularity=0)
-create_build_time_graph(benchmarking_results, sample_size=50, n_threads=1, min_points=10000)
+#create_build_time_graph(benchmarking_results, sample_size=50, n_threads=1, min_points=10000)
+create_graph_compare_build_time_with_complexity(build_time_complexity_results)
