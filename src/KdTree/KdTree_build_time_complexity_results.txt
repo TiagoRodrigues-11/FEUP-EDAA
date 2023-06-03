@@ -1,0 +1,144 @@
+TEST 0 50 1 100000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):28.3422
+Built tree in (s):13.9548
+Finished searching for nearest neighbours in (s):7.26734
+RUN 2
+Retrieved songs from database in (s):30.429
+Built tree in (s):14.8666
+Finished searching for nearest neighbours in (s):4.15972
+RUN 3
+Retrieved songs from database in (s):29.9798
+Built tree in (s):13.4976
+Finished searching for nearest neighbours in (s):2.65268
+TEST 1 50 1 100000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):17.4668
+Built tree in (s):6.78028
+Finished searching for nearest neighbours in (s):0.62822
+RUN 2
+Retrieved songs from database in (s):16.501
+Built tree in (s):6.80534
+Finished searching for nearest neighbours in (s):0.622771
+RUN 3
+Retrieved songs from database in (s):15.7016
+Built tree in (s):6.94912
+Finished searching for nearest neighbours in (s):0.629667
+TEST 10 50 1 100000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):8.35846
+Built tree in (s):2.39103
+Finished searching for nearest neighbours in (s):0.475025
+RUN 2
+Retrieved songs from database in (s):5.98169
+Built tree in (s):2.40205
+Finished searching for nearest neighbours in (s):0.474048
+RUN 3
+Retrieved songs from database in (s):5.961
+Built tree in (s):2.4065
+Finished searching for nearest neighbours in (s):0.479348
+TEST 20 50 1 100000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):4.11472
+Built tree in (s):1.07374
+Finished searching for nearest neighbours in (s):0.540891
+RUN 2
+Retrieved songs from database in (s):3.76904
+Built tree in (s):1.39826
+Finished searching for nearest neighbours in (s):0.645535
+RUN 3
+Retrieved songs from database in (s):4.73648
+Built tree in (s):1.17525
+Finished searching for nearest neighbours in (s):0.581173
+TEST 30 50 1 100000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):2.0127
+Built tree in (s):0.560159
+Finished searching for nearest neighbours in (s):0.255112
+RUN 2
+Retrieved songs from database in (s):1.49301
+Built tree in (s):0.528719
+Finished searching for nearest neighbours in (s):0.2326
+RUN 3
+Retrieved songs from database in (s):1.51934
+Built tree in (s):0.537715
+Finished searching for nearest neighbours in (s):0.131877
+TEST 40 50 1 100000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):0.693551
+Built tree in (s):0.235708
+Finished searching for nearest neighbours in (s):0.152537
+RUN 2
+Retrieved songs from database in (s):0.691591
+Built tree in (s):0.236483
+Finished searching for nearest neighbours in (s):0.206099
+RUN 3
+Retrieved songs from database in (s):0.71128
+Built tree in (s):0.230862
+Finished searching for nearest neighbours in (s):0.108552
+TEST 50 50 1 100000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):0.294485
+Built tree in (s):0.0966226
+Finished searching for nearest neighbours in (s):0.048245
+RUN 2
+Retrieved songs from database in (s):0.29399
+Built tree in (s):0.0951373
+Finished searching for nearest neighbours in (s):0.107218
+RUN 3
+Retrieved songs from database in (s):0.310059
+Built tree in (s):0.0952954
+Finished searching for nearest neighbours in (s):0.0438745
+TEST 60 50 1 100000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):0.17394
+Built tree in (s):0.0346629
+Finished searching for nearest neighbours in (s):0.0254308
+RUN 2
+Retrieved songs from database in (s):0.170802
+Built tree in (s):0.035298
+Finished searching for nearest neighbours in (s):0.0225918
+RUN 3
+Retrieved songs from database in (s):0.175627
+Built tree in (s):0.0358505
+Finished searching for nearest neighbours in (s):0.022792
+TEST 70 50 1 100000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):0.0444763
+Built tree in (s):0.00867594
+Finished searching for nearest neighbours in (s):0.0149862
+RUN 2
+Retrieved songs from database in (s):0.0269165
+Built tree in (s):0.00843628
+Finished searching for nearest neighbours in (s):0.0150503
+RUN 3
+Retrieved songs from database in (s):0.0306446
+Built tree in (s):0.00850887
+Finished searching for nearest neighbours in (s):0.0148005
+TEST 80 50 1 100000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):0.00891803
+Built tree in (s):0.00114867
+Finished searching for nearest neighbours in (s):0.00145161
+RUN 2
+Retrieved songs from database in (s):0.00702159
+Built tree in (s):0.00112206
+Finished searching for nearest neighbours in (s):0.00147825
+RUN 3
+Retrieved songs from database in (s):0.00843356
+Built tree in (s):0.00114198
+Finished searching for nearest neighbours in (s):0.00144801
+TEST 90 50 1 100000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):0.00219768
+Built tree in (s):0.000112982
+Finished searching for nearest neighbours in (s):0.000668643
+RUN 2
+Retrieved songs from database in (s):0.00245662
+Built tree in (s):0.000111929
+Finished searching for nearest neighbours in (s):0.000653034
+RUN 3
+Retrieved songs from database in (s):0.00209373
+Built tree in (s):0.000114735
+Finished searching for nearest neighbours in (s):0.000659997
+TEST

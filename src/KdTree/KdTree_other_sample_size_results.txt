@@ -1,0 +1,66 @@
+TEST 0 1 4 50000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):26.9753
+Built tree in (s):2.96912
+Finished searching for nearest neighbours in (s):22.7408
+RUN 2
+Retrieved songs from database in (s):29.644
+Built tree in (s):2.76964
+Finished searching for nearest neighbours in (s):14.6426
+RUN 3
+Retrieved songs from database in (s):30.3718
+Built tree in (s):2.36509
+Finished searching for nearest neighbours in (s):3.48989
+TEST 0 5 4 50000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):29.872
+Built tree in (s):4.08166
+Finished searching for nearest neighbours in (s):3.46044
+RUN 2
+Retrieved songs from database in (s):28.3428
+Built tree in (s):4.04309
+Finished searching for nearest neighbours in (s):4.19262
+RUN 3
+Retrieved songs from database in (s):28.1129
+Built tree in (s):4.09905
+Finished searching for nearest neighbours in (s):10.6024
+TEST 0 10 4 50000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):28.1042
+Built tree in (s):5.6917
+Finished searching for nearest neighbours in (s):7.00587
+RUN 2
+Retrieved songs from database in (s):28.2753
+Built tree in (s):5.59875
+Finished searching for nearest neighbours in (s):6.85799
+RUN 3
+Retrieved songs from database in (s):27.6361
+Built tree in (s):5.65515
+Finished searching for nearest neighbours in (s):3.54581
+TEST 0 20 4 50000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):28.6329
+Built tree in (s):8.15495
+Finished searching for nearest neighbours in (s):1.06749
+RUN 2
+Retrieved songs from database in (s):27.8523
+Built tree in (s):8.17069
+Finished searching for nearest neighbours in (s):3.433
+RUN 3
+Retrieved songs from database in (s):28.0923
+Built tree in (s):8.08138
+Finished searching for nearest neighbours in (s):4.4628
+TEST 0 50 4 50000 standard_test_input.lf
+RUN 1
+Retrieved songs from database in (s):27.5269
+Built tree in (s):14.2751
+Finished searching for nearest neighbours in (s):3.05051
+RUN 2
+Retrieved songs from database in (s):27.4609
+Built tree in (s):14.316
+Finished searching for nearest neighbours in (s):1.98649
+RUN 3
+Retrieved songs from database in (s):28.0752
+Built tree in (s):14.6067
+Finished searching for nearest neighbours in (s):1.65988
+TEST

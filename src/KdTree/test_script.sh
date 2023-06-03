@@ -10,6 +10,9 @@ num_threads=(1 2 4 8 16)
 min_points_threads=(10000 50000 100000 400000)
 test_files=("standard_test_input.lf")
 
+other_popularities=(0 1 10 20 30 40 50 60 70 80 90)
+other_sample_sizes=(1 5 10 20 50)
+
 rm -rf KdTree_results.txt
 
 for test_file in "${test_files[@]}"
@@ -57,6 +60,38 @@ do
 done
 
 echo TEST >> KdTree_range_results.txt
+
+rm -rf KdTree_build_time_complexity_results.txt
+
+for popularity in "${other_popularities[@]}"
+do
+    echo "Running KdTree 3 times with popularity: $popularity, sample size: 50, num threads: 1, min points per thread: 100000, test file: standard_test_input.lf..."
+    echo "TEST $popularity 50 1 100000 standard_test_input.lf" >> KdTree_build_time_complexity_results.txt
+    for i in {1..3} # test 3 times for each parameter combination
+    do
+        echo "RUN $i" >> KdTree_build_time_complexity_results.txt
+        ./KdTree $popularity -s 50 -t 1 --ts 100000 --test standard_test_input.lf > KdTree_output.txt
+        grep -f grep_time_patterns.lf KdTree_output.txt >> KdTree_build_time_complexity_results.txt
+    done
+done
+
+echo TEST >> KdTree_build_time_complexity_results.txt
+
+rm -rf KdTree_other_sample_size_results.txt
+
+for sample_size in "${other_sample_sizes[@]}"
+do
+    echo "Running KdTree 3 times with popularity: 0, sample size: $sample_size, num threads: 4, min points per thread: 50000, test file: standard_test_input.lf..."
+    echo "TEST 0 $sample_size 4 50000 standard_test_input.lf" >> KdTree_other_sample_size_results.txt
+    for i in {1..3} # test 3 times for each parameter combination
+    do
+        echo "RUN $i" >> KdTree_other_sample_size_results.txt
+        ./KdTree 0 -s $sample_size -t 4 --ts 50000 --test standard_test_input.lf > KdTree_output.txt
+        grep -f grep_time_patterns.lf KdTree_output.txt >> KdTree_other_sample_size_results.txt
+    done
+done
+
+echo TEST >> KdTree_other_sample_size_results.txt
 
 rm -rf KdTree_output.txt
 echo "Done."
