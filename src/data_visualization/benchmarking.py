@@ -175,6 +175,49 @@ def create_thread_split_threshold_runtime_graph(dataframe, sample_size=50, popul
 
     plt.show()
 
+def create_graph_compare_build_time_with_complexity(dataframe, sample_size=50, n_threads=1, min_points=10000):
+    values = dataframe[(dataframe['Sample Size'] == sample_size) & (dataframe['Number of Threads'] == n_threads) & (dataframe['Minimum Points per Thread'] == min_points)]
+    values = values.sort_values('Number of tracks')
+    # plot graph with number of tracks as x-axis and build time as y-axis as points
+    ax1 = values.plot(x='Number of tracks', y='Build Time (s)', kind='scatter', color='blue', label='Build Time')
+    plt.xlabel('Number of tracks')
+    plt.ylabel('Build Time (s)')
+    plt.title(f'Sample Size: {sample_size}, Number of Threads: {n_threads}, Minimum Points per Thread: {min_points}')
+    plt.legend()
+
+    for p in ax1.patches:
+        ax1.annotate(format(p.get_height(), '.5f'), (p.get_x() + p.get_width() / 2., p.get_height()), ha = 'center', va = 'bottom', rotation = 'vertical', xytext = (0, 10), textcoords = 'offset points')
+    
+    # Fake Data
+    x = np.linspace(0, 8700000, 1000)
+    y = x * np.log(x) / 8700000
+    plt.plot(x, y, "--", color='red', label='O(nlogn)')
+    plt.legend()
+
+
+    plt.ylim(top=ax1.get_ylim()[1] * 1.1)
+
+    plt.show()
+
+
+
+def create_knn_time_graph(dataframe, sample_size=50, n_threads=1, min_point=10000):
+    values = dataframe[(dataframe['Sample Size'] == sample_size) & (dataframe['Number of Threads'] == n_threads) & (dataframe['Minimum Points per Thread'] == min_point)]
+    values = values.sort_values('Number of tracks')
+    # plot graph with number of tracks as x-axis and knn time as y-axis
+    ax1 = values.plot(x='Number of tracks', y='kNN Time (s)', kind='bar', color='green', label='kNN Time')
+    plt.xlabel('Number of tracks')
+    plt.ylabel('kNN Time (s)')
+    plt.title(f'Sample Size: {sample_size}, Number of Threads: {n_threads}, Minimum Points per Thread: {min_point}')
+    plt.legend()
+
+    for p in ax1.patches:
+        ax1.annotate(format(p.get_height(), '.5f'), (p.get_x() + p.get_width() / 2., p.get_height()), ha = 'center', va = 'bottom', rotation = 'vertical', xytext = (0, 10), textcoords = 'offset points')
+
+    plt.ylim(top=ax1.get_ylim()[1] * 1.1)
+
+    plt.show()
+
 
 #print(benchmarking_results.head())
 #create_graph_sample_size_build_time(benchmarking_results)
@@ -182,5 +225,4 @@ def create_thread_split_threshold_runtime_graph(dataframe, sample_size=50, popul
 #create_execution_time_according_to_number_of_threads_graph(benchmarking_results, sample_size=50, min_points=10000, popularity=0)
 #create_execution_time_according_to_number_of_tracks_graph_range_search(range_search_results, sample_size=50, n_threads=16, min_points=100000)
 #create_knn_size_sample_size_graph(benchmarking_results, n_threads=4, min_points=50000, popularity=0)
-#create_build_time_graph(benchmarking_results, sample_size=50, n_threads=1, min_points=10000)
-create_thread_split_threshold_runtime_graph(benchmarking_results, sample_size=50, popularity=0, n_threads=16)
+create_build_time_graph(benchmarking_results, sample_size=50, n_threads=1, min_points=10000)
