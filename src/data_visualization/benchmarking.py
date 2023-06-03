@@ -158,6 +158,23 @@ def create_build_time_graph(dataframe, sample_size=50, n_threads=16, min_points=
 
     plt.show()
 
+def create_thread_split_threshold_runtime_graph(dataframe, sample_size=50, popularity=0, n_threads=16):
+    values = dataframe[(dataframe['Sample Size'] == sample_size) & (dataframe['Popularity'] == popularity) & (dataframe['Number of Threads'] == n_threads)]
+    values = values.sort_values('Minimum Points per Thread')
+    # plot graph with minimum points per thread as x-axis and build time as y-axis
+    ax1 = values.plot(x='Minimum Points per Thread', y='Build Time (s)', kind='bar', color='blue', label='Build Time')
+    plt.xlabel('Minimum Points per Thread')
+    plt.ylabel('Build Time (s)')
+    plt.title(f'Sample Size: {sample_size}, Popularity: {popularity}, Number of Threads: {n_threads}')
+    plt.legend()
+
+    for p in ax1.patches:
+        ax1.annotate(format(p.get_height(), '.5f'), (p.get_x() + p.get_width() / 2., p.get_height()), ha = 'center', va = 'bottom', rotation = 'vertical', xytext = (0, 10), textcoords = 'offset points')
+
+    plt.ylim(top=ax1.get_ylim()[1] * 1.1)
+
+    plt.show()
+
 
 #print(benchmarking_results.head())
 #create_graph_sample_size_build_time(benchmarking_results)
@@ -165,4 +182,5 @@ def create_build_time_graph(dataframe, sample_size=50, n_threads=16, min_points=
 #create_execution_time_according_to_number_of_threads_graph(benchmarking_results, sample_size=50, min_points=10000, popularity=0)
 #create_execution_time_according_to_number_of_tracks_graph_range_search(range_search_results, sample_size=50, n_threads=16, min_points=100000)
 #create_knn_size_sample_size_graph(benchmarking_results, n_threads=4, min_points=50000, popularity=0)
-create_build_time_graph(benchmarking_results, sample_size=50, n_threads=1, min_points=10000)
+#create_build_time_graph(benchmarking_results, sample_size=50, n_threads=1, min_points=10000)
+create_thread_split_threshold_runtime_graph(benchmarking_results, sample_size=50, popularity=0, n_threads=16)
