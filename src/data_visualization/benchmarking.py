@@ -68,7 +68,7 @@ def create_execution_time_according_to_number_of_tracks_graph(knn_dataframe, ran
     knn_values = knn_dataframe[(knn_dataframe['Sample Size'] == sample_size) & (knn_dataframe['Number of Threads'] == n_threads) & (knn_dataframe['Minimum Points per Thread'] == min_points)]
     knn_values = knn_values.drop(columns=['Range Search Time (s)'])
     knn_values = knn_values.sort_values('Number of tracks')
-    range_values = range_dataframe[(range_dataframe['Sample Size'] == sample_size) & (range_dataframe['Number of Threads'] == n_threads) & (range_dataframe['Minimum Points per Thread'] == min_points)]
+    range_values = range_dataframe[(range_dataframe['Sample Size'] == sample_size) and (range_dataframe['Number of Threads'] == n_threads) and (range_dataframe['Minimum Points per Thread'] == min_points)]
     range_values = range_values.drop(columns=['Query Time (s)', 'Build Time (s)', 'kNN Time (s)'])
     range_values = range_values.sort_values('Number of tracks')
     # merge the two dataframes where the sample size, number of threads, and minimum points per thread are the same
@@ -141,10 +141,28 @@ def create_knn_size_sample_size_graph(dataframe, n_threads=16, min_points=100000
 
     plt.show()
 
+def create_build_time_graph(dataframe, sample_size=50, n_threads=16, min_points=100000):
+    values = dataframe[(dataframe['Sample Size'] == sample_size) & (dataframe['Number of Threads'] == n_threads) & (dataframe['Minimum Points per Thread'] == min_points)]
+    values = values.sort_values('Number of tracks')
+    # plot graph with number of tracks as x-axis and build time as y-axis
+    ax1 = values.plot(x='Number of tracks', y='Build Time (s)', kind='bar', color='blue', label='Build Time')
+    plt.xlabel('Number of tracks')
+    plt.ylabel('Build Time (s)')
+    plt.title(f'Sample Size: {sample_size}, Number of Threads: {n_threads}, Minimum Points per Thread: {min_points}')
+    plt.legend()
+
+    for p in ax1.patches:
+        ax1.annotate(format(p.get_height(), '.5f'), (p.get_x() + p.get_width() / 2., p.get_height()), ha = 'center', va = 'bottom', rotation = 'vertical', xytext = (0, 10), textcoords = 'offset points')
+
+    plt.ylim(top=ax1.get_ylim()[1] * 1.1)
+
+    plt.show()
+
 
 #print(benchmarking_results.head())
 #create_graph_sample_size_build_time(benchmarking_results)
 #create_execution_time_according_to_number_of_tracks_graph(benchmarking_results, range_search_results, sample_size=50, n_threads=16, min_points=100000)
 #create_execution_time_according_to_number_of_threads_graph(benchmarking_results, sample_size=50, min_points=10000, popularity=0)
 #create_execution_time_according_to_number_of_tracks_graph_range_search(range_search_results, sample_size=50, n_threads=16, min_points=100000)
-create_knn_size_sample_size_graph(benchmarking_results, n_threads=16, min_points=400000, popularity=0)
+#create_knn_size_sample_size_graph(benchmarking_results, n_threads=4, min_points=50000, popularity=0)
+create_build_time_graph(benchmarking_results, sample_size=50, n_threads=1, min_points=10000)
