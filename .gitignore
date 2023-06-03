@@ -4,3 +4,4 @@
 !schema.sql
 !create-tracks-table-and-end-transaction.sql
 .vscode/
+image/
